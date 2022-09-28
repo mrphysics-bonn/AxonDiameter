@@ -1,3 +1,7 @@
 connectom_coeff.grad
 *.nii
 *.nii.gz
+*.par
+*.bvec
+*.bval
+*.rot
