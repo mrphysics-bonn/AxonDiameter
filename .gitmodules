@@ -1,0 +1,6 @@
+[submodule "gradunwarp"]
+	path = gradunwarp
+	url = https://github.com/Washington-University/gradunwarp
+[submodule "AxonRadiusMapping"]
+	path = AxonRadiusMapping
+	url = https://github.com/NYU-DiffusionMRI/AxonRadiusMapping.git
