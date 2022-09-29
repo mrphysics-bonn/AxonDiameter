@@ -6,4 +6,4 @@
 - FSL
 - gradunwarp (submodule)
 - AxonRadiusMapping (submodule)
-- -Python (incl. Numpy, Nibabel)
+- Python (incl. Numpy, Nibabel)
