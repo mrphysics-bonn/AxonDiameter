@@ -95,6 +95,21 @@ ${FSLDIR}/bin/convertwarp --abs --ref=$WD/trilinear.nii.gz --warp1=$WD/fullWarp_
 ${FSLDIR}/bin/fslmaths ${OutputTransformFile}_jacobian -Tmean ${OutputTransformFile}_jacobian
 ${FSLDIR}/bin/applywarp --rel --interp=spline -i $InputFile -r $WD/${BaseName}_vol1.nii.gz -w $OutputTransform -o $OutputFile
 
+# Calculate gradent deviations
+outfolder=$(dirname $InputFile)
+GRADDEV=$outfolder/grad_dev.nii 
+GRADDEV_X=$outfolder/grad_dev_x.nii
+GRADDEV_Y=$outfolder/grad_dev_y.nii
+GRADDEV_Z=$outfolder/grad_dev_z.nii
+IMRM=$outfolder/grad_dev_?	
+
+# Based on:
+# https://github.com/Washington-University/HCPpipelines/blob/master/DiffusionPreprocessing/scripts/eddy_postproc.sh
+calc_grad_perc_dev --fullwarp=$OutputTransform --out=$GRADDEV
+fslmerge -t $GRADDEV $GRADDEV_X $GRADDEV_Y $GRADDEV_Z
+fslmaths $GRADDEV -div 100 $GRADDEV # Convert from % deviation to absolute
+imrm $IMRM
+
 echo " "
 echo " END: GradientDistortionUnwarp"
 echo " END: `date`" >> $WD/log.txt
