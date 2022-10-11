@@ -38,9 +38,9 @@ ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="${SCRIPTPATH}/../data/un
 
 # WIP: Correct b-values with unwarping output
 
-# Spherical harmonic deconvolution
-amp2sh -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-amp2sh -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+# Spherical harmonic decomposition
+amp2sh -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+amp2sh -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 
 # Divide by sqrt(4pi) to get powder average
 fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
