@@ -8,27 +8,40 @@ else
     IN_FILE="$1"
 fi
 
-IN_FILE_pf=${IN_FILE%%.*}
+IN_FILE_PREFIX=${IN_FILE%%.*}
+IN_FILE_PATH=$(dirname $IN_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # Denoising
-dwidenoise -noise "${IN_FILE_pf}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_pf}_denoised.nii.gz"
+dwidenoise -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PREFIX}_denoised.nii.gz"
 
 # Convert to magnitude
-python "${SCRIPTPATH}/nifti2mag.py" "${IN_FILE_pf}_denoised.nii.gz" "${IN_FILE_pf}_denoised_mag.nii.gz"
+python "${SCRIPTPATH}/nifti2mag.py" "${IN_FILE_PREFIX}_denoised.nii.gz" "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
 
-# Motion Correction - results are pretty awful, so currently not used 
-# mcflirt -in "${IN_FILE_pf}_denoised_mag.nii.gz" -o "${IN_FILE_pf}_denoised_mag_moco.nii.gz" -cost corratio -refvol 0 -spline_final -plots
-# python "${SCRIPTPATH}/rot_bvec.py" "${IN_FILE_pf}.bvec" "${IN_FILE_pf}_denoised_mag_moco.nii.gz.par" # b-value rotation
+# Motion correction with eddy - convert nii to mif; note must also provide bvecs and bvals
+mrconvert "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
+
+# this file contains a list of the simultaneously acquired slices in acquisition order
+slspec="$SCRIPTPATH/example_slspec.txt"
+
+# let mrtrix take care of providing eddy input and output
+# readout_time may need to be longer to satisfy eddy's sanity checking (but not so long that it starts expecting large shifts)
+# first level model (flm) is set to linear to avoid overfitting as spiral data should already have been corrected for eddy currents
+# mporder is recommended to be somewhere between N/4 and N/2, where N is the number of excitations
+dwifslpreproc "${IN_FILE_PREFIX}_denoised_mag.mif" "${IN_FILE_PREFIX}_denoised_mag_moco.mif" -rpe_none -pe_dir ap -readout_time 0.01 -eddy_slspec $slspec -eddyqc_all $IN_FILE_PATH -eddy_options " --flm=linear --repol --data_is_shelled --mporder=13 --ol_type=both "
+
+# Convert mrtrix output to nii and bvec/bval
+mrconvert "${IN_FILE_PREFIX}_denoised_mag_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" "${IN_FILE_PREFIX}_denoised_mag_moco.nii.gz"
 
 # Gradient nonlinearity correction
-${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="${SCRIPTPATH}/../data/unwarp_wd" --in="${IN_FILE_pf}_denoised_mag" --out="${IN_FILE_pf}_denoised_mag_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_pf}_owarp"
+${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="${SCRIPTPATH}/../data/unwarp_wd" --in="${IN_FILE_PREFIX}_denoised_mag_moco" --out="${IN_FILE_PREFIX}_denoised_mag_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
 
 # WIP: Correct b-values with unwarping output
 
 # Spherical harmonic deconvolution
-# WIP: use -normalise flag to normalise the DW signal to the b=0 image?
-amp2sh -shells 6000 -fslgrad "${IN_FILE_pf}.bvec" "${IN_FILE_pf}.bval" -rician "${IN_FILE_pf}_noise_map.nii.gz" "${IN_FILE_pf}_denoised_mag_unwarped.nii.gz" "${IN_FILE_pf}_denoised_mag_unwarped_sh_b6000.nii.gz"
-amp2sh -shells 30450 -fslgrad "${IN_FILE_pf}.bvec" "${IN_FILE_pf}.bval" -rician "${IN_FILE_pf}_noise_map.nii.gz" "${IN_FILE_pf}_denoised_mag_unwarped.nii.gz" "${IN_FILE_pf}_denoised_mag_unwarped_sh_b30000.nii.gz"
+amp2sh -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+amp2sh -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_denoised_mag_moco.bvec" "${IN_FILE_PREFIX}_denoised_mag_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 
-# WIP: What is the input of the Axon diameter Matlab script?
+# Divide by sqrt(4pi) to get powder average
+fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
