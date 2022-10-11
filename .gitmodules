@@ -3,4 +3,4 @@
 	url = https://github.com/Washington-University/gradunwarp
 [submodule "AxonRadiusMapping"]
 	path = AxonRadiusMapping
-	url = https://github.com/NYU-DiffusionMRI/AxonRadiusMapping.git
+	url = https://github.com/mavel101/AxonRadiusMapping.git
