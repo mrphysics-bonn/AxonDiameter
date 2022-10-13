@@ -8,15 +8,26 @@ else
     IN_FILE="$1"
 fi
 
+mag_flag=false
+while getopts 'm' mag; do
+mag_flag=true
+done
+
 IN_FILE_PREFIX=${IN_FILE%%.*}
 IN_FILE_PATH=$(dirname $IN_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-# Denoising
-dwidenoise -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PREFIX}_denoised.nii.gz"
-
-# Convert to magnitude
-python "${SCRIPTPATH}/nifti2mag.py" "${IN_FILE_PREFIX}_denoised.nii.gz" "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+if $mag_flag; then
+    # Convert to magnitude
+    python "${SCRIPTPATH}/nifti2mag.py" ${IN_FILE} "${IN_FILE_PREFIX}_mag.nii.gz"
+    # Denoising
+    dwidenoise -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_mag.nii.gz" "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+else
+    # Denoising
+    dwidenoise -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PREFIX}_denoised.nii.gz"
+    # Convert to magnitude
+    python "${SCRIPTPATH}/nifti2mag.py" "${IN_FILE_PREFIX}_denoised.nii.gz" "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+fi
 
 # Gibbs-Ringing removal
 mrdegibbs "${IN_FILE_PREFIX}_denoised_mag.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_gr.nii.gz"
