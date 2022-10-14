@@ -19,11 +19,18 @@ SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 # Denoising
 dwidenoise -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
 
-# Gibbs-Ringing removal
-mrdegibbs "${IN_FILE_PREFIX}_denoised_mag.nii.gz" "${IN_FILE_PREFIX}_denoised_mag_gr.nii.gz"
+# Convert nii to mif
+mrconvert "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
 
-# Motion correction with eddy - convert nii to mif; note must also provide bvecs and bvals
-mrconvert "${IN_FILE_PREFIX}_denoised_mag_gr.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag_gr.mif"
+# Low-SNR Rician bias correction (from DESIGNER pipeline)
+mrconvert ${IN_FILE} -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_ricinput.mif"
+dwiextract -shell 30450 "${IN_FILE_PREFIX}_ricinput.mif" dwilowb.mif
+dwidenoise -noise lowbnoisemap.mif dwilowb.mif dwitmp.mif
+mrcalc "${IN_FILE_PREFIX}_denoised_mag.mif" 2 -pow lowbnoisemap.mif 2 -pow -sub -abs -sqrt - | mrcalc - -finite - 0 -if "${IN_FILE_PREFIX}_denoised_mag_rician.mif"
+/bin/rm dwilowb.mif lowbnoisemap.mif dwitmp.mif dwirc.mif "${IN_FILE_PREFIX}_ricinput.mif"
+
+# Gibbs-Ringing removal
+mrdegibbs "${IN_FILE_PREFIX}_denoised_mag_rician.mif" "${IN_FILE_PREFIX}_denoised_mag_gr.mif"
 
 # this file contains a list of the simultaneously acquired slices in acquisition order
 slspec="$SCRIPTPATH/example_slspec.txt"
@@ -51,11 +58,12 @@ fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_splitt
 /bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
 
 # Spherical harmonic decomposition - disable Rician noise correction as its currently not correct
-# amp2sh -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-# amp2sh -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 amp2sh -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
 amp2sh -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 
 # Divide by sqrt(4pi) to get powder average
 fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
 fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+
+# Calculate axon diameters
+matlab -nodisplay -r "calcAxonMaps('${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz', '${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz', '${IN_FILE_PREFIX}.bval', '${IN_FILE_PREFIX}.bvec', '${IN_FILE_PATH}/grad_dev.nii.gz');exit"
