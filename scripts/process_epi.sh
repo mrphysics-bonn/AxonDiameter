@@ -22,15 +22,8 @@ dwidenoise -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PRE
 # Convert nii to mif
 mrconvert "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
 
-# Low-SNR Rician bias correction (from DESIGNER pipeline)
-mrconvert ${IN_FILE} -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_ricinput.mif"
-dwiextract -shell 30450 "${IN_FILE_PREFIX}_ricinput.mif" dwilowb.mif
-dwidenoise -noise lowbnoisemap.mif dwilowb.mif dwitmp.mif
-mrcalc "${IN_FILE_PREFIX}_denoised_mag.mif" 2 -pow lowbnoisemap.mif 2 -pow -sub -abs -sqrt - | mrcalc - -finite - 0 -if "${IN_FILE_PREFIX}_denoised_mag_rician.mif"
-/bin/rm dwilowb.mif lowbnoisemap.mif dwitmp.mif dwirc.mif "${IN_FILE_PREFIX}_ricinput.mif"
-
 # Gibbs-Ringing removal
-mrdegibbs "${IN_FILE_PREFIX}_denoised_mag_rician.mif" "${IN_FILE_PREFIX}_denoised_mag_gr.mif"
+mrdegibbs "${IN_FILE_PREFIX}_denoised_mag.mif" "${IN_FILE_PREFIX}_denoised_mag_gr.mif"
 
 # this file contains a list of the simultaneously acquired slices in acquisition order
 slspec="$SCRIPTPATH/example_slspec.txt"
@@ -57,9 +50,10 @@ bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0
 fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
 /bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
 
-# Spherical harmonic decomposition - disable Rician noise correction as its currently not correct
-amp2sh -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-amp2sh -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+# Spherical harmonic decomposition
+# Rician bias correction needs commit e0c2417 from https://github.com/lukeje/mrtrix3
+amp2sh -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+amp2sh -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 
 # Divide by sqrt(4pi) to get powder average
 fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
