@@ -31,7 +31,7 @@ Processing for spiral data can be started running scripts/process_spiral.sh #IN_
 
 ## Requirements
 
-- MRtrix3
+- MRtrix3 (needs commit e0c2417 from https://github.com/lukeje/mrtrix3, that fixes a bug in the Rician bias correction)
 - FSL
 - gradunwarp (included submodule)
 - AxonRadiusMapping (included submodule)

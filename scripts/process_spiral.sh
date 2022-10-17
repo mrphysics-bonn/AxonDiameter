@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# option
+mag_flag=false
+while getopts "m" mag; do
+    mag_flag=true
+    echo "Denoising after conversion to magnitude images."
+done
+shift "$((OPTIND-1))"
+
 # input
 if [ "$#" -lt 1 ]; then
     echo "Input file missing"
@@ -7,11 +15,6 @@ if [ "$#" -lt 1 ]; then
 else
     IN_FILE="$1"
 fi
-
-mag_flag=false
-while getopts 'm' mag; do
-mag_flag=true
-done
 
 IN_FILE_PREFIX=${IN_FILE%%.*}
 IN_FILE_PATH=$(dirname $IN_FILE)
