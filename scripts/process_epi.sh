@@ -36,7 +36,7 @@ mrcat "${IN_FILE_PREFIX}_AP_b0.mif" "${IN_FILE_PREFIX}_PA_b0.mif" "${IN_FILE_PRE
 # let mrtrix take care of providing eddy and topup input and output
 # readout_time is copied from the json file for our data
 # mporder is recommended to be somewhere between N/4 and N/2, where N is the number of excitations
-dwifslpreproc "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_pair -se_epi "${IN_FILE_PREFIX}_b0.mif" -pe_dir ap -readout_time 0.0227833 -eddy_slspec $slspec -eddyqc_all $IN_FILE_PATH -eddy_options " --flm=cubic --slm=linear --repol --data_is_shelled --mporder=13 --ol_type=both "
+dwifslpreproc "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_pair -se_epi "${IN_FILE_PREFIX}_b0.mif" -pe_dir ap -readout_time 0.0227833 -eddy_slspec $slspec -eddyqc_all $IN_FILE_PATH -eddy_options " --flm=cubic --repol --data_is_shelled --mporder=13 --ol_type=both "
 
 # Convert mrtrix output to nii and bvec/bval
 mrconvert "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco.nii.gz"
