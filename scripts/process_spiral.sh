@@ -54,14 +54,8 @@ mrconvert "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco.
 # Gradient nonlinearity correction
 ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="${SCRIPTPATH}/../data/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
 
-# Brain masking
-fslsplit "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_splitted_vol"
-bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.3 -m
-fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
-/bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
-
 # Spherical harmonic decomposition
-# Use Rician bias correction only for magnitude data - needs commit e0c2417 from https://github.com/lukeje/mrtrix3
+# Use Rician bias correction only for magnitude data - needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3
 if $mag_flag; then
     amp2sh -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
     amp2sh -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
@@ -69,6 +63,13 @@ else
     amp2sh -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
     amp2sh -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 fi
+
+# Brain masking
+fslsplit "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_splitted_vol"
+bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.3 -m
+fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -mul "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -mul "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+/bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
 
 # Divide by sqrt(4pi) to get powder average
 fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
