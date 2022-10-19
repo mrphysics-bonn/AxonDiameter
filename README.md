@@ -39,7 +39,7 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 - FSL
 - gradunwarp (included submodule)
 - AxonRadiusMapping (included submodule)
-- Python (incl. Numpy, Nibabel)
+- Python (incl. Numpy, Nibabel 3.2.2 (< version 4))
 - Matlab
 
 ## References
