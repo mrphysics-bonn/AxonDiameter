@@ -46,13 +46,13 @@ slspec="$SCRIPTPATH/example_slspec.txt"
 # readout_time may need to be longer to satisfy eddy's sanity checking (but not so long that it starts expecting large shifts)
 # first level model (flm) is set to linear to avoid overfitting as spiral data should already have been corrected for eddy currents
 # mporder is recommended to be somewhere between N/4 and N/2, where N is the number of excitations
-dwifslpreproc "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_none -pe_dir ap -readout_time 0.01 -eddy_slspec $slspec -eddyqc_all $IN_FILE_PATH -eddy_options " --flm=linear --repol --data_is_shelled --mporder=13 --ol_type=both "
+dwifslpreproc "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_none -pe_dir ap -readout_time 0.01 -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --flm=linear --repol --data_is_shelled --mporder=13 --ol_type=both "
 
 # Convert mrtrix output to nii and bvec/bval
 mrconvert "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco.nii.gz"
 
 # Gradient nonlinearity correction
-${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="${SCRIPTPATH}/../data/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
+${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="$IN_FILE_PATH/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
 
 # Spherical harmonic decomposition
 # Use Rician bias correction only for magnitude data - needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3
