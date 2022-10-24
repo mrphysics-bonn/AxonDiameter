@@ -38,7 +38,7 @@ bet "${DIF_FILE_PREFIX}_splitted_vol0000.nii.gz" "${DIF_FILE_PREFIX}_splitted_vo
 /bin/rm "${DIF_FILE_PREFIX}_splitted_vol"*
 fslmaths $DIF_FILE -mul "${DIF_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_bet.nii.gz"
 
-# Register mean b0 to MPRAGE using the epi_reg script (currently not used)
+# Register mean b0 to MPRAGE using the epi_reg script
 mrconvert "${DIF_FILE_PREFIX}_bet.nii.gz" -force -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
 dwiextract -force "${DIF_FILE_PREFIX}.mif" - -bzero | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb0.mif" -axis 3
 mrconvert -force "${DIF_FILE_PREFIX}_meanb0.mif" "${DIF_FILE_PREFIX}_meanb0.nii.gz"
