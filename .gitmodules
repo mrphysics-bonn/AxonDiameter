@@ -4,3 +4,6 @@
 [submodule "AxonRadiusMapping"]
 	path = AxonRadiusMapping
 	url = https://github.com/mavel101/AxonRadiusMapping.git
+[submodule "TractSeg"]
+	path = TractSeg
+	url = https://github.com/MIC-DKFZ/TractSeg.git
