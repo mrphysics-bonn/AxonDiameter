@@ -12,8 +12,12 @@ shift "$((OPTIND-1))"
 if [ "$#" -lt 1 ]; then
     echo "Input file missing"
     exit 1
+elif [ "$#" -lt 2 ]; then
+    echo "No T1 file specified, dont do white matter masking."
+    IN_FILE="$1"
 else
     IN_FILE="$1"
+    T1_FILE="$2"
 fi
 
 IN_FILE_PREFIX=${IN_FILE%%.*}
@@ -53,7 +57,7 @@ slspec="$SCRIPTPATH/example_slspec.txt"
 dwifslpreproc -force "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_none -pe_dir ap -readout_time 0.01 -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --flm=linear --repol --data_is_shelled --mporder=13 --ol_type=both "
 
 # Convert mrtrix output to nii and bvec/bval
-mrconvert -force "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco.nii.gz"
+mrconvert -force "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco.nii.gz"
 
 # Gradient nonlinearity correction
 ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="$IN_FILE_PATH/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
@@ -61,11 +65,11 @@ ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="$IN_FILE_PATH/unwarp_wd"
 # Spherical harmonic decomposition
 # Use Rician bias correction only for magnitude data - needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3
 if $mag_flag; then
-    amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-    amp2sh -force -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 else
-    amp2sh -force -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-    amp2sh -force -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco.bvec" "${IN_FILE_PREFIX}_moco.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 fi
 
 # Brain masking
@@ -82,3 +86,9 @@ fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE
 
 # Calculate axon diameters
 matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz', '${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz', '${IN_FILE_PREFIX}_fixed.bval', '${IN_FILE_PREFIX}_fixed.bvec', '${IN_FILE_PATH}/grad_dev.nii.gz');exit"
+
+# Calculate relative SNR maps, white matter masks & do tractography
+${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
+if test -f ${T1_FILE}; then
+    ${SCRIPTPATH}/wm_axons.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap.nii" ${T1_FILE}

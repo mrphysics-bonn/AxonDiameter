@@ -22,14 +22,16 @@ PA_FILE2_PREFIX=${PA_FILE2%%.*}
 DIF_FILE_PATH=$(dirname $DIF_FILE)
 
 # Calculate noise map
-dwidenoise -noise "${DIF_FILE_PREFIX}_noise_map.nii.gz" ${DIF_FILE} "${DIF_FILE_PREFIX}_denoised.nii.gz"
+dwidenoise -force -noise "${DIF_FILE_PREFIX}_noise_map.nii.gz" ${DIF_FILE} "${DIF_FILE_PREFIX}_denoised.nii.gz"
 
 # Mean b0 relative SNR map
-mrconvert $DIF_FILE -force -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
+mrconvert -force $DIF_FILE -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
 dwiextract -force "${DIF_FILE_PREFIX}.mif" - -bzero | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb0.mif" -axis 3
 mrconvert -force "${DIF_FILE_PREFIX}_meanb0.mif" "${DIF_FILE_PREFIX}_meanb0.nii.gz"
 fslmaths "${DIF_FILE_PREFIX}_meanb0.nii.gz" -div "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz"
 
-# Powder-averages relative SNR map
+# Powder-averages relative SNR map (scale by mean b0 as powder-average is also scaled to that)
 fslmaths ${PA_FILE1} -div "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${PA_FILE1_PREFIX}_relativeSNR.nii.gz"
+fslmaths "${PA_FILE1_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${PA_FILE1_PREFIX}_relativeSNR.nii.gz"
 fslmaths ${PA_FILE2} -div "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${PA_FILE2_PREFIX}_relativeSNR.nii.gz"
+fslmaths "${PA_FILE2_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${PA_FILE2_PREFIX}_relativeSNR.nii.gz"
