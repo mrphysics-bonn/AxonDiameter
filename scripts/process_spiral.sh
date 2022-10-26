@@ -92,3 +92,4 @@ ${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FIL
 ${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
 if test -f ${T1_FILE}; then
     ${SCRIPTPATH}/wm_axons.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap.nii" ${T1_FILE}
+fi
