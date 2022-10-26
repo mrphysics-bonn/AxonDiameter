@@ -88,8 +88,8 @@ fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE
 matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz', '${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz', '${IN_FILE_PREFIX}_fixed.bval', '${IN_FILE_PREFIX}_fixed.bvec', '${IN_FILE_PATH}/grad_dev.nii.gz');exit"
 
 # Calculate relative SNR maps, white matter masks & do tractography
-${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
-${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
 if test -f ${T1_FILE}; then
     ${SCRIPTPATH}/wm_axons.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap.nii" ${T1_FILE}
 fi
+${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" ${T1_FILE}
+${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"

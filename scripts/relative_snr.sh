@@ -10,10 +10,16 @@ elif [ "$#" -lt 2 ]; then
 elif [ "$#" -lt 3 ]; then
     echo "Powder average shell 2 missing"
     exit 1
+elif [ "$#" -lt 4 ]; then
+    echo "No T1 file specified, dont register SNR maps"
+    DIF_FILE="$1"
+    PA_FILE1="$2"
+    PA_FILE2="$3"
 else
     DIF_FILE="$1"
     PA_FILE1="$2"
     PA_FILE2="$3"
+    T1_FILE="$4"
 fi
 
 DIF_FILE_PREFIX=${DIF_FILE%%.*}
@@ -36,3 +42,9 @@ fslmaths ${PA_FILE1} -div "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${PA_FILE1_PREF
 fslmaths "${PA_FILE1_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${PA_FILE1_PREFIX}_relativeSNR.nii.gz"
 fslmaths ${PA_FILE2} -div "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${PA_FILE2_PREFIX}_relativeSNR.nii.gz"
 fslmaths "${PA_FILE2_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${PA_FILE2_PREFIX}_relativeSNR.nii.gz"
+
+if test -f "${T1_FILE_PREFIX}_bet.nii.gz" && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
+    flirt -in "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    flirt -in "${PA_FILE1_PREFIX}_relativeSNR.nii.gz" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${PA_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    flirt -in "${PA_FILE2_PREFIX}_relativeSNR.nii.gz" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${PA_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+fi
