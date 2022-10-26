@@ -28,7 +28,7 @@ rotate_bvecs -i "${IN_FILE_PREFIX}.bvec" -t "${IN_FILE_PATH}/FA_MNI.mat" -o "${I
 # WIP: Extract shells 0,30450 for tractography
 mrconvert -force "${IN_FILE_PREFIX}_MNI.nii.gz" -fslgrad "${IN_FILE_PREFIX}_MNI.bvec" "${IN_FILE_PREFIX}_MNI.bval" "${IN_FILE_PREFIX}_MNI.mif"
 dwiextract -shells 0,30450 "${IN_FILE_PREFIX}_MNI.mif" "${IN_FILE_PREFIX}_MNI_b30000.mif"
-mrconvert -force "${IN_FILE_PREFIX}_MNI_b30000.mif" "${IN_FILE_PREFIX}_MNI_b30000.nii.gz"
+mrconvert -force "${IN_FILE_PREFIX}_MNI_b30000.mif" -export_grad_fsl "${IN_FILE_PREFIX}_MNI_b30000.bvec" "${IN_FILE_PREFIX}_MNI_b30000.bval" "${IN_FILE_PREFIX}_MNI_b30000.nii.gz"
 
 # Do tractography with TractSeg
-TractSeg -i "${IN_FILE_PREFIX}_MNI_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_MNI.bval" --bvecs "${IN_FILE_PREFIX}_MNI.bvec" --raw_diffusion_input
+TractSeg -i "${IN_FILE_PREFIX}_MNI_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_MNI_b30000.bval" --bvecs "${IN_FILE_PREFIX}_MNI_b30000.bvec" --raw_diffusion_input
