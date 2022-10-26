@@ -62,6 +62,13 @@ mrconvert -force "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX
 # Gradient nonlinearity correction
 ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="$IN_FILE_PATH/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
 
+# Brain masking
+fslsplit "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_splitted_vol"
+bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.3 -m
+/bin/cp "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_mask.nii.gz"
+/bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
+fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
+
 # Spherical harmonic decomposition
 # Use Rician bias correction only for magnitude data - needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3
 if $mag_flag; then
@@ -71,14 +78,6 @@ else
     amp2sh -force -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
     amp2sh -force -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped.bvec" "${IN_FILE_PREFIX}_moco_unwarped.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
 fi
-
-# Brain masking
-fslsplit "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_splitted_vol"
-bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.3 -m
-fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -mul "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -mul "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
-/bin/cp "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_mask.nii.gz"
-/bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
 
 # Divide by sqrt(4pi) to get powder average
 fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
@@ -99,5 +98,5 @@ matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('
 if test -f ${T1_FILE}; then
     ${SCRIPTPATH}/wm_axons.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap.nii" ${T1_FILE}
 fi
-${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" ${T1_FILE}
+${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" "${IN_FILE_PREFIX}_noise_map.nii.gz" ${T1_FILE}
 ${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
