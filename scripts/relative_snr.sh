@@ -25,6 +25,7 @@ fi
 DIF_FILE_PREFIX=${DIF_FILE%%.*}
 PA_FILE1_PREFIX=${PA_FILE1%%.*}
 PA_FILE2_PREFIX=${PA_FILE2%%.*}
+T1_FILE_PREFIX=${T1_FILE%%.*}
 DIF_FILE_PATH=$(dirname $DIF_FILE)
 
 # Calculate noise map

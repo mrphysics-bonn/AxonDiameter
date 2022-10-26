@@ -71,8 +71,8 @@ fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_
 fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 
 # Extract 0th order coefficients
-fslsplit "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg_split.nii.gz"
-fslsplit "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg_split.nii.gz"
+fslsplit "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg_split"
+fslsplit "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg_split"
 /bin/mv "${IN_FILE_PREFIX}_sh_b6000_powderavg_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
 /bin/mv "${IN_FILE_PREFIX}_sh_b30000_powderavg_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 /bin/rm "${IN_FILE_PREFIX}_sh_b6000_powderavg_split"*
