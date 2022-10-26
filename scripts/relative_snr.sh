@@ -22,10 +22,11 @@ PA_FILE2_PREFIX=${PA_FILE2%%.*}
 DIF_FILE_PATH=$(dirname $DIF_FILE)
 
 # Calculate noise map
-dwidenoise -force -noise "${DIF_FILE_PREFIX}_noise_map.nii.gz" ${DIF_FILE} "${DIF_FILE_PREFIX}_denoised.nii.gz"
+mrconvert -force $DIF_FILE -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
+dwiextract -force -shells 0,6000 "${DIF_FILE_PREFIX}.mif" "${DIF_FILE_PREFIX}_lowb.mif"
+dwidenoise -force -noise "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${DIF_FILE_PREFIX}_lowb.mif" "${DIF_FILE_PREFIX}_lowb_denoised.mif"
 
 # Mean b0 relative SNR map
-mrconvert -force $DIF_FILE -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
 dwiextract -force "${DIF_FILE_PREFIX}.mif" - -bzero | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb0.mif" -axis 3
 mrconvert -force "${DIF_FILE_PREFIX}_meanb0.mif" "${DIF_FILE_PREFIX}_meanb0.nii.gz"
 fslmaths "${DIF_FILE_PREFIX}_meanb0.nii.gz" -div "${DIF_FILE_PREFIX}_noise_map.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz"
