@@ -31,15 +31,8 @@ else
     fast -g "${T1_FILE_PREFIX}_bet.nii.gz"
 fi
 
-# Mask diffusion data
-fslsplit $DIF_FILE "${DIF_FILE_PREFIX}_splitted_vol"
-bet "${DIF_FILE_PREFIX}_splitted_vol0000.nii.gz" "${DIF_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.4 -m
-/bin/cp "${DIF_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${DIF_FILE_PREFIX}_mask.nii.gz"
-/bin/rm "${DIF_FILE_PREFIX}_splitted_vol"*
-fslmaths $DIF_FILE -mul "${DIF_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_bet.nii.gz"
-
 # Register mean b0 to MPRAGE using the epi_reg script
-mrconvert -force "${DIF_FILE_PREFIX}_bet.nii.gz" -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
+mrconvert -force $DIF_FILE -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
 dwiextract -force "${DIF_FILE_PREFIX}.mif" - -bzero | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb0.mif" -axis 3
 mrconvert -force "${DIF_FILE_PREFIX}_meanb0.mif" "${DIF_FILE_PREFIX}_meanb0.nii.gz"
 epi_reg --epi="${DIF_FILE_PREFIX}_meanb0.nii.gz" --t1=$T1_FILE --t1brain="${T1_FILE_PREFIX}_bet.nii.gz" --wmseg="${T1_FILE_PREFIX}_bet_seg_2.nii.gz" --out="${DIF_FILE_PREFIX}_meanb0_reg.nii.gz"

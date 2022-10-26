@@ -58,7 +58,7 @@ fslsplit "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_splitted_vo
 bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.3 -m
 /bin/cp "${IN_FILE_PREFIX}_splitted_vol0000_mask.nii.gz" "${IN_FILE_PREFIX}_mask.nii.gz"
 /bin/rm "${IN_FILE_PREFIX}_splitted_vol"*
-fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
 
 # Spherical harmonic decomposition
 # Rician bias correction needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3
