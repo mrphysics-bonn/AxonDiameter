@@ -11,26 +11,34 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
 2. Convert to magnitude data ("nifti2mag.py")
    
-3. Gibbs Ringing removal (MRtrix3: "mrdegibbs") [2]
+3. Check diffusion gradient table (MRtrix3: "dwigradcheck") [11]
+   
+4. Gibbs Ringing removal (MRtrix3: "mrdegibbs") [2]
 
-4. EPI:
+5. EPI:
    - TOPUP (FSL) [3]
    - Eddy (FSL) [4]
 
-4. Spiral
+6. Spiral
    - Motion correction (FSL Eddy)
 
-5. Gradient nonlinearity correction (is essential due to high b-values/strong gradients) [5]
+7. Gradient nonlinearity correction (is essential due to high b-values/strong gradients) [5]
    - GradientDistortionUnwarp.sh (needs https://github.com/Washington-University/gradunwarp)
    - includes b-vector correction (gradient nonlinearity correction leads to different b-values/b-vectors in different voxels)
 
-6. Brain masking (FSL BET) [6]
+8. Brain masking (FSL BET) [6]
 
-7. Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh) [7]
+9.  Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh) [7]
 	
-8. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [8]
+10. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [8]
 
-9. Calculate axon radius maps [9,10]
+11. Calculate axon radius maps [9,10]
+    
+12. Calculate relative SNR maps
+   
+13. Tractography using TractSeg [12]
+    
+14. White matter masking of axon radius maps (FSL FAST [13] & FSL FLIRT [14, 15]) 
 
 
 ## Requirements
@@ -39,7 +47,8 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 - FSL
 - gradunwarp (included submodule)
 - AxonRadiusMapping (included submodule)
-- Python (incl. Numpy, Nibabel 3.2.2 (< version 4))
+- TractSeg (included submodule, only for tractography)
+- Python (incl. Numpy, Nibabel 3.2.2 (< version 4), Pytorch for TractSeg)
 - Matlab
 
 ## References
@@ -63,3 +72,13 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 9. Veraart, J. et. al. Noninvasive quantification of axon radii using diffusion MRI, eLife, 9:e49855, 2020
 
 10. Veraart, J. et. al. The variability of MR axon radii estimates in the human white matter, Human Brain Mapping, 42:2201–2213, 2021
+    
+11. Jeurissen, B.; Leemans, A.; Sijbers, J. Automated correction of improperly rotated diffusion gradient orientations in diffusion weighted MRI. Medical Image Analysis, 2014, 18(7), 953-962
+    
+12. Wasserthal, J., Neher, P., Maier-Hein, K. H. TractSeg - Fast and accurate white matter tract segmentation, NeuroImage, 183:239-253, 2018
+    
+13. Zhang, Y. and Brady, M. and Smith, S. Segmentation of brain MR images through a hidden Markov random field model and the expectation-maximization algorithm. IEEE Trans Med Imag, 20(1):45-57, 2001.
+    
+14. M. Jenkinson and S.M. Smith. A global optimisation method for robust affine registration of brain images. Medical Image Analysis, 5(2):143-156, 2001. 
+
+15. M. Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith. Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage, 17(2):825-841, 2002. 
