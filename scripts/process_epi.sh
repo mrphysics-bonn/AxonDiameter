@@ -54,12 +54,10 @@ mrconvert -force "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX
 ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="$IN_FILE_PATH/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
 
 # Spherical harmonic decomposition
-# Rician bias correction needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3
+# Rician bias correction needs up to commit aea92a8 from https://github.com/lukeje/mrtrix3
 # Calculate one dataset without normalization for relative noise estimation
 amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
 amp2sh -force -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
-amp2sh -force -lmax 6 -shells 0,6000 -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_notNormalised.nii.gz"
-amp2sh -force -lmax 6 -shells 0,30450 -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_notNormalised.nii.gz"
 
 # Brain masking
 fslsplit "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_splitted_vol"
@@ -69,18 +67,12 @@ bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0
 fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz"
 fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
 fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
-fslmaths "${IN_FILE_PREFIX}_sh_b6000_notNormalised.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_notNormalised.nii.gz"
-fslmaths "${IN_FILE_PREFIX}_sh_b30000_notNormalised.nii.gz" -mul "${IN_FILE_PREFIX}_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_notNormalised.nii.gz"
 
 # Extract 0th order coefficients
 fslsplit "${IN_FILE_PREFIX}_sh_b6000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_split"
 fslsplit "${IN_FILE_PREFIX}_sh_b30000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_split"
 /bin/mv "${IN_FILE_PREFIX}_sh_b6000_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
 /bin/mv "${IN_FILE_PREFIX}_sh_b30000_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
-fslsplit "${IN_FILE_PREFIX}_sh_b6000_notNormalised.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_notNormalised_split"
-fslsplit "${IN_FILE_PREFIX}_sh_b30000_notNormalised.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_notNormalised_split"
-/bin/mv "${IN_FILE_PREFIX}_sh_b6000_notNormalised_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_notNormalised.nii.gz"
-/bin/mv "${IN_FILE_PREFIX}_sh_b30000_notNormalised_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_notNormalised.nii.gz"
 /bin/rm "${IN_FILE_PATH}/"*"split"*
 
 # Divide by sqrt(4pi) to get powder average
@@ -94,5 +86,5 @@ matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('
 if test -f ${T1_FILE}; then
     ${SCRIPTPATH}/wm_axons.sh "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap.nii" ${T1_FILE}
 fi
-${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_notNormalised.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_notNormalised.nii.gz" "${IN_FILE_PREFIX}_noise_map.nii.gz" ${T1_FILE}
-${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz"
+${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" "${IN_FILE_PREFIX}_noise_map.nii.gz" ${T1_FILE}
+# ${SCRIPTPATH}/tractography.sh "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz"
