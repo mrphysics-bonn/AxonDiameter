@@ -39,10 +39,6 @@ fi
 # convert nii to mif
 mrconvert -force "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
 
-# Check and correct gradient table
-dwigradcheck -force "${IN_FILE_PREFIX}_denoised_mag.mif" -export_grad_fsl "${IN_FILE_PREFIX}_fixed.bvec" "${IN_FILE_PREFIX}_fixed.bval"
-mrconvert -force "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}_fixed.bvec" "${IN_FILE_PREFIX}_fixed.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
-
 # Gibbs-Ringing removal
 mrdegibbs -force "${IN_FILE_PREFIX}_denoised_mag.mif" "${IN_FILE_PREFIX}_denoised_mag_gr.mif"
 

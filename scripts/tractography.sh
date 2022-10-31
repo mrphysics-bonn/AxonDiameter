@@ -42,7 +42,7 @@ if $preproc_flag; then
 else
     # Extract shells 0,30450 for tractography
     mrconvert -force $IN_FILE -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}.mif"
-    dwiextract -shells 0,30450 "${IN_FILE_PREFIX}.mif" "${IN_FILE_PREFIX}_b30000.mif"
+    dwiextract -force -shells 0,30450 "${IN_FILE_PREFIX}.mif" "${IN_FILE_PREFIX}_b30000.mif"
     mrconvert -force "${IN_FILE_PREFIX}_b30000.mif" -export_grad_fsl "${IN_FILE_PREFIX}_b30000.bvec" "${IN_FILE_PREFIX}_b30000.bval" "${IN_FILE_PREFIX}_b30000.nii.gz"
 
     # Do tractography with TractSeg

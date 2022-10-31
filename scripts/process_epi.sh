@@ -27,10 +27,6 @@ dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_F
 # Convert nii to mif
 mrconvert -force "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
 
-# Check and correct gradient table
-dwigradcheck -force "${IN_FILE_PREFIX}_denoised_mag.mif" -export_grad_fsl "${IN_FILE_PREFIX}_fixed.bvec" "${IN_FILE_PREFIX}_fixed.bval"
-mrconvert -force "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}_fixed.bvec" "${IN_FILE_PREFIX}_fixed.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
-
 # Gibbs-Ringing removal
 mrdegibbs -force "${IN_FILE_PREFIX}_denoised_mag.mif" "${IN_FILE_PREFIX}_denoised_mag_gr.mif"
 
@@ -38,7 +34,7 @@ mrdegibbs -force "${IN_FILE_PREFIX}_denoised_mag.mif" "${IN_FILE_PREFIX}_denoise
 slspec="$SCRIPTPATH/example_slspec.txt"
 
 # input for topup
-dwiextract -force "${IN_FILE}" - -bzero -fslgrad "${IN_FILE_PREFIX}_fixed.bvec" "${IN_FILE_PREFIX}_fixed.bval" | mrmath -force - mean "${IN_FILE_PREFIX}_AP_b0.mif" -axis 3
+dwiextract -force "${IN_FILE}" - -bzero -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" | mrmath -force - mean "${IN_FILE_PREFIX}_AP_b0.mif" -axis 3
 mrmath -force "${PA_FILE}" mean "${IN_FILE_PREFIX}_PA_b0.mif" -axis 3
 mrcat -force "${IN_FILE_PREFIX}_AP_b0.mif" "${IN_FILE_PREFIX}_PA_b0.mif" "${IN_FILE_PREFIX}_b0.mif" -axis 3
 
