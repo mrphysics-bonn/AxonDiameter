@@ -38,6 +38,7 @@ if $preproc_flag; then
     mrconvert -force "${IN_FILE_PREFIX}_b30000_MNI.mif" -export_grad_fsl "${IN_FILE_PREFIX}_b30000_MNI.bvec" "${IN_FILE_PREFIX}_b30000_MNI.bval" "${IN_FILE_PREFIX}_b30000_MNI.nii.gz"
 
     # Do tractography with TractSeg
+    /bin/rm "$IN_FILE_PATH/tracts"
     TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input
 else
     # Extract shells 0,30450 for tractography
@@ -46,5 +47,6 @@ else
     mrconvert -force "${IN_FILE_PREFIX}_b30000.mif" -export_grad_fsl "${IN_FILE_PREFIX}_b30000.bvec" "${IN_FILE_PREFIX}_b30000.bval" "${IN_FILE_PREFIX}_b30000.nii.gz"
 
     # Do tractography with TractSeg
+    /bin/rm "$IN_FILE_PATH/tracts"
     TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input
 fi
