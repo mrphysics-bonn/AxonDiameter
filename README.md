@@ -15,28 +15,28 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
 4. EPI:
    - TOPUP (FSL) [3]
-   - Eddy (FSL) [4]
+   - Eddy (FSL) [4,5,6]
 
 5. Spiral
    - Motion correction (FSL Eddy)
 
-6. Gradient nonlinearity correction (is essential due to high b-values/strong gradients) [5]
+6. Gradient nonlinearity correction (is essential due to high b-values/strong gradients) [7,8]
    - GradientDistortionUnwarp.sh (needs https://github.com/Washington-University/gradunwarp)
    - includes b-vector correction (gradient nonlinearity correction leads to different b-values/b-vectors in different voxels)
 
-7. Brain masking (FSL BET) [6]
+7. Brain masking (FSL BET) [9]
 
-8.  Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh) [7]
+8. Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh) [10]
 	
-9. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [8]
+9. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [11]
 
-10. Calculate axon radius maps [9,10]
+10. Calculate axon radius maps [12,13]
     
 11. Calculate relative SNR maps
    
-12. Tractography using TractSeg [11]
+12. Tractography using TractSeg [14]
     
-13. White matter masking of axon radius maps (FSL FAST [12] & FSL FLIRT [13, 14]) 
+13. White matter masking of axon radius maps (FSL FAST [15] & FSL FLIRT [16, 17]) 
 
 
 ## Requirements
@@ -57,24 +57,30 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
 3. Jesper L. R. Andersson and Stamatios N. Sotiropoulos. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 125:1063-1078, 2016. 
 
-4. J.L.R. Andersson, S. Skare, J. Ashburner. How to correct susceptibility distortions in spin-echo echo-planar images: application to diffusion tensor imaging. NeuroImage, 20(2):870-888, 2003. 
+4. Jesper L. R. Andersson and Stamatios N. Sotiropoulos. An integrated approach to correction for off-resonance effects and subject movement in diffusion MR imaging. NeuroImage, 125:1063-1078, 2016.
+   
+5. Jesper L. R. Andersson, Mark S. Graham, Eniko Zsoldos and Stamatios N. Sotiropoulos. Incorporating outlier detection and replacement into a non-parametric framework for movement and distortion correction of diffusion MR images. NeuroImage, 141:556-572, 2016.
+   
+6. Jesper L. R. Andersson, Mark S. Graham, Ivana Drobnjak, Hui Zhang, Nicola Filippini and Matteo Bastiani. Towards a comprehensive framework for movement and distortion correction of diffusion MR images: Within volume movement. NeuroImage, 152:450-466, 2017. 
 
-5. Bammer, R., et al. Analysis and generalized correction of the effect of spatial gradient field distortions in diffusion‐weighted imaging. Magnetic Resonance in Medicine, 50(3):560-569, 2003
+7. Janke, A., et al. Use of spherical harmonic deconvolution methods to compensate for nonlinear gradient effects on MRI images, MRM, 2004;52(1):115-122
+   
+8. Glasser, M. et. al. The minimal preprocessing pipelines for the Human Connectome Project. Neuroimage, 2013;80:105-24
 
-6. S.M. Smith. Fast robust automated brain extraction. Human Brain Mapping, 17(3):143-155, 2002.
+9.  S.M. Smith. Fast robust automated brain extraction. Human Brain Mapping, 17(3):143-155, 2002.
 
-7. Afzali, et al. Computing the orientational-average of diffusion-weighted MRI signals: a comparison of different techniques. Scientific Reports, 11:14345, 2021
+10. Afzali, et al. Computing the orientational-average of diffusion-weighted MRI signals: a comparison of different techniques. Scientific Reports, 11:14345, 2021
 
-8. Tournier, J.-D. et. al.. MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 2019, 202, 116137
+11. Tournier, J.-D. et. al.. MRtrix3: A fast, flexible and open software framework for medical image processing and visualisation. NeuroImage, 2019, 202, 116137
 
-9. Veraart, J. et. al. Noninvasive quantification of axon radii using diffusion MRI, eLife, 9:e49855, 2020
+12. Veraart, J. et. al. Noninvasive quantification of axon radii using diffusion MRI, eLife, 9:e49855, 2020
 
-10. Veraart, J. et. al. The variability of MR axon radii estimates in the human white matter, Human Brain Mapping, 42:2201–2213, 2021
+13. Veraart, J. et. al. The variability of MR axon radii estimates in the human white matter, Human Brain Mapping, 42:2201–2213, 2021
       
-11. Wasserthal, J., Neher, P., Maier-Hein, K. H. TractSeg - Fast and accurate white matter tract segmentation, NeuroImage, 183:239-253, 2018
+14. Wasserthal, J., Neher, P., Maier-Hein, K. H. TractSeg - Fast and accurate white matter tract segmentation, NeuroImage, 183:239-253, 2018
     
-12. Zhang, Y. and Brady, M. and Smith, S. Segmentation of brain MR images through a hidden Markov random field model and the expectation-maximization algorithm. IEEE Trans Med Imag, 20(1):45-57, 2001.
+15. Zhang, Y. and Brady, M. and Smith, S. Segmentation of brain MR images through a hidden Markov random field model and the expectation-maximization algorithm. IEEE Trans Med Imag, 20(1):45-57, 2001.
     
-13. M. Jenkinson and S.M. Smith. A global optimisation method for robust affine registration of brain images. Medical Image Analysis, 5(2):143-156, 2001. 
+16. M. Jenkinson and S.M. Smith. A global optimisation method for robust affine registration of brain images. Medical Image Analysis, 5(2):143-156, 2001. 
 
-14. M. Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith. Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage, 17(2):825-841, 2002. 
+17. M. Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith. Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage, 17(2):825-841, 2002. 
