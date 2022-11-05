@@ -10,7 +10,6 @@ import os
 import nibabel as nib
 import numpy as np
 from skimage.measure import label
-from scipy.ndimage import binary_erosion
 
 def getLargestCC(segmentation):
     """
@@ -45,7 +44,6 @@ def main(args):
     for k,data in enumerate(data_cc):
         data[data<0] = 0 # endings mask seems to contain gray matter, remove that from the mask
         data = getLargestCC(data).astype(data.dtype) # remove non-connected voxels
-        data = binary_erosion(data).astype(data.dtype) # remove one layer to make mask tighter
         hdr.set_data_dtype(data.dtype)
         img_out = nib.Nifti1Image(data, affine=affine, header=hdr)
         if k == 7:
