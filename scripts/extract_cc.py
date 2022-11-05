@@ -10,6 +10,7 @@ import os
 import nibabel as nib
 import numpy as np
 from skimage.measure import label
+from scipy.ndimage import binary_erosion
 
 def getLargestCC(segmentation):
     """
@@ -37,15 +38,14 @@ def main(args):
     # read data
     data1 = [nib.load(args.in_path1+f"/CC_{k+1}.nii.gz").get_fdata() for k in range(cc_segments)]
     data1.append(file_cc1.get_fdata())
-    data2_b = [nib.load(args.in_path2+f"/CC_{k+1}_b.nii.gz").get_fdata() for k in range(cc_segments)]
-    data2_b.append(nib.load(args.in_path2+"/CC_b.nii.gz").get_fdata())
-    data2_e = [nib.load(args.in_path2+f"/CC_{k+1}_e.nii.gz").get_fdata() for k in range(cc_segments)]
-    data2_e.append(nib.load(args.in_path2+"/CC_e.nii.gz").get_fdata())
+    data_cc_b = nib.load(args.in_path2+"/CC_b.nii.gz").get_fdata()
+    data_cc_e = nib.load(args.in_path2+"/CC_e.nii.gz").get_fdata()
 
-    data_cc = [(data1[k] - data2_b[k] - data2_e[k]) for k in range(len(data1))]
+    data_cc = [(data1[k] - data_cc_b - data_cc_e) for k in range(len(data1))]
     for k,data in enumerate(data_cc):
         data[data<0] = 0 # endings mask seems to contain gray matter, remove that from the mask
         data = getLargestCC(data).astype(data.dtype) # remove non-connected voxels
+        data = binary_erosion(data).astype(data.dtype) # remove one layer to make mask tighter
         hdr.set_data_dtype(data.dtype)
         img_out = nib.Nifti1Image(data, affine=affine, header=hdr)
         if k == 7:
