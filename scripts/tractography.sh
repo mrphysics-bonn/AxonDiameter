@@ -43,12 +43,12 @@ if $preproc_flag; then
     mrconvert -force "${IN_FILE_PREFIX}_b30000_MNI.mif" -export_grad_fsl "${IN_FILE_PREFIX}_b30000_MNI.bvec" "${IN_FILE_PREFIX}_b30000_MNI.bval" "${IN_FILE_PREFIX}_b30000_MNI.nii.gz"
 
     # Do tractography with TractSeg
-    /bin/rm "$IN_FILE_PATH/tracts"
-
     if $endings_flag; then
         echo "Calculate Tract endings"
-        TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input --output_type=endings_segmentation
+        /bin/rm -rf "$IN_FILE_PATH/tracts_endings_MNI"
+        TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_endings_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input --output_type=endings_segmentation
     else
+        /bin/rm -rf "$IN_FILE_PATH/tracts_MNI"
         TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input
     fi
 else
@@ -58,12 +58,12 @@ else
     mrconvert -force "${IN_FILE_PREFIX}_b30000.mif" -export_grad_fsl "${IN_FILE_PREFIX}_b30000.bvec" "${IN_FILE_PREFIX}_b30000.bval" "${IN_FILE_PREFIX}_b30000.nii.gz"
 
     # Do tractography with TractSeg
-    /bin/rm "$IN_FILE_PATH/tracts"
-
     if $endings_flag; then
         echo "Calculate Tract endings"
-        TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input --output_type=endings_segmentation
+        /bin/rm -rf "$IN_FILE_PATH/tracts_endings"
+        TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts_endings" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input --output_type=endings_segmentation
     else
+        /bin/rm -rf "$IN_FILE_PATH/tracts"
         TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input
     fi
 fi
