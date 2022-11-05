@@ -2,9 +2,12 @@
 
 # option
 preproc_flag=false
-while getopts "p" preproc; do
-    preproc_flag=true
-    echo "Images are registered to MNI space before segmentation."
+endings_flag=false
+while getopts "pe" opt; do
+    case $opt in
+        p) preproc_flag=true ;;
+        e) endings_flag=true ;;
+    esac
 done
 shift "$((OPTIND-1))"
 
@@ -21,6 +24,8 @@ IN_FILE_PATH=$(dirname $IN_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 if $preproc_flag; then
+    echo "Images are registered to MNI space before segmentation."
+
     # Register diffusion images to MNI space with FA map - not recommended, does not seem to work well
     fslsplit $IN_FILE "${IN_FILE_PREFIX}_splitted_vol"
     bet "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" "${IN_FILE_PREFIX}_splitted_vol0000.nii.gz" -f 0.3 -m
@@ -39,7 +44,13 @@ if $preproc_flag; then
 
     # Do tractography with TractSeg
     /bin/rm "$IN_FILE_PATH/tracts"
-    TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input
+
+    if $endings_flag; then
+        echo "Calculate Tract endings"
+        TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input --output_type=endings_segmentation
+    else
+        TractSeg -i "${IN_FILE_PREFIX}_b30000_MNI.nii.gz" -o "$IN_FILE_PATH/tracts_MNI" --bvals "${IN_FILE_PREFIX}_b30000_MNI.bval" --bvecs "${IN_FILE_PREFIX}_b30000_MNI.bvec" --raw_diffusion_input
+    fi
 else
     # Extract shells 0,30450 for tractography
     mrconvert -force $IN_FILE -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}.mif"
@@ -48,5 +59,11 @@ else
 
     # Do tractography with TractSeg
     /bin/rm "$IN_FILE_PATH/tracts"
-    TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input
+
+    if $endings_flag; then
+        echo "Calculate Tract endings"
+        TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input --output_type=endings_segmentation
+    else
+        TractSeg -i "${IN_FILE_PREFIX}_b30000.nii.gz" -o "$IN_FILE_PATH/tracts" --bvals "${IN_FILE_PREFIX}_b30000.bval" --bvecs "${IN_FILE_PREFIX}_b30000.bvec" --raw_diffusion_input
+    fi
 fi
