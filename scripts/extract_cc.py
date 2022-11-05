@@ -51,7 +51,7 @@ def main(args):
         if k == 7:
             nib.save(img_out, args.out_path+"/CC_noEndings.nii.gz")
         else:
-            nib.save(img_out, args.out_path+f"/CC_{k}_noEndings.nii.gz")
+            nib.save(img_out, args.out_path+f"/CC_{k+1}_noEndings.nii.gz")
 
 if __name__ == "__main__":
 
