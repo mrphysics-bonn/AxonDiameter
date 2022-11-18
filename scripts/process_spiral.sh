@@ -47,10 +47,9 @@ slspec="$SCRIPTPATH/example_slspec.txt"
 
 # Motion correction with eddy
 # let mrtrix take care of providing eddy input and output
-# readout_time may need to be longer to satisfy eddy's sanity checking (but not so long that it starts expecting large shifts)
-# first level model (flm) is set to linear to avoid overfitting as spiral data should already have been corrected for eddy currents
+# first level model (flm) is set to movement to avoid eddy current correction, as spiral data has already been corrected
 # mporder is recommended to be somewhere between N/4 and N/2, where N is the number of excitations
-dwifslpreproc -force "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_none -pe_dir ap -readout_time 0.01 -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --flm=linear --repol --data_is_shelled --mporder=13 --ol_type=both "
+dwifslpreproc -force "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_none -pe_dir ap -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --flm=movement --repol --data_is_shelled --mporder=13 --ol_type=both "
 
 # Convert mrtrix output to nii and bvec/bval
 mrconvert -force "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco.nii.gz"
