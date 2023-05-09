@@ -1,3 +1,5 @@
 connectom_coeff.grad
 data/*
 !data/.gitkeep
+seq/pilot
+test/
