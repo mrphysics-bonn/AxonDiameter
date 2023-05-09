@@ -3,6 +3,8 @@
 Processing for spiral data can be started running scripts/process_spiral.sh #IN_FILE.
 Processing for EPI data can be started running scripts/process_epi.sh #IN_FILE #IN_FILE_PA.
 
+Before processing EPI data, the b-vectors should be corrected with the submodule "correctBmatrixOverflow", which corrects for an integer overflow leading to partly wrong b-vectors.
+
 ## Preprocessing & Axon diameter calculation
 
 Steps 1 & 2 can be interchanged, if only magnitude data is available.
