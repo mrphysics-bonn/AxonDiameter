@@ -3,3 +3,4 @@ data/*
 !data/.gitkeep
 seq/pilot
 test/
+scripts/along_tract/__pycache__/
