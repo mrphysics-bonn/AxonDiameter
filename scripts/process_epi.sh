@@ -37,7 +37,7 @@ bet "${IN_FILE_PREFIX}_denoised_mag_meanb0.nii.gz" "${IN_FILE_PREFIX}_denoised_m
 gunzip -f "${IN_FILE_PREFIX}_denoised_mag_meanb0_bet_mask.nii.gz" # unzip as otherwise the mask gets corrupted by mrconvert in dwifslpreproc
 
 # this file contains a list of the simultaneously acquired slices in acquisition order
-slspec="$SCRIPTPATH/example_slspec.txt"
+slspec="$SCRIPTPATH/slspec_epi.txt"
 
 # input for topup
 dwiextract -force "${IN_FILE}" - -bzero -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" | mrmath -force - mean "${IN_FILE_PREFIX}_AP_b0.mif" -axis 3

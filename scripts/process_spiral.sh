@@ -49,7 +49,7 @@ bet "${IN_FILE_PREFIX}_denoised_mag_meanb0.nii.gz" "${IN_FILE_PREFIX}_denoised_m
 gunzip -f "${IN_FILE_PREFIX}_denoised_mag_meanb0_bet_mask.nii.gz" # unzip as otherwise the mask gets corrupted by mrconvert in dwifslpreproc
 
 # # this file contains a list of the simultaneously acquired slices in acquisition order
-slspec="$SCRIPTPATH/example_slspec.txt"
+slspec="$SCRIPTPATH/slspec_spiral.txt"
 
 # Motion correction with eddy
 # let mrtrix take care of providing eddy input and output
