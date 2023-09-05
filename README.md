@@ -28,18 +28,17 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
 7. Brain masking (FSL BET) [9]
 
-8. Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh) [10]
+8. Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh [11] for complex-denoised data, maximum-likelihood estimator [18] for magnitude data) 
 	
-9. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [11]
+9. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [10]
 
 10. Calculate axon radius maps [12,13]
     
 11. Calculate relative SNR maps
-   
-12. Tractography using TractSeg [14]
-    
-13. White matter masking of axon radius maps (FSL FAST [15] & FSL FLIRT [16, 17]) 
+       
+12. White matter masking of axon radius maps (FSL FAST [14] & FSL FLIRT [15, 16]) 
 
+13. Along-fibre quantification currently only along the left CST (using pyAFQ for along-fibre quantification [17] and MrTrix for tractography [11])
 
 ## Requirements
 
@@ -47,7 +46,6 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 - FSL
 - gradunwarp (included submodule)
 - AxonRadiusMapping (included submodule)
-- TractSeg (included submodule, only for tractography)
 - Python (incl. Numpy, Nibabel 3.2.2 (< version 4), Pytorch for TractSeg)
 - Matlab
 
@@ -78,11 +76,13 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 12. Veraart, J. et. al. Noninvasive quantification of axon radii using diffusion MRI, eLife, 9:e49855, 2020
 
 13. Veraart, J. et. al. The variability of MR axon radii estimates in the human white matter, Human Brain Mapping, 42:2201–2213, 2021
-      
-14. Wasserthal, J., Neher, P., Maier-Hein, K. H. TractSeg - Fast and accurate white matter tract segmentation, NeuroImage, 183:239-253, 2018
+          
+14. Zhang, Y. and Brady, M. and Smith, S. Segmentation of brain MR images through a hidden Markov random field model and the expectation-maximization algorithm. IEEE Trans Med Imag, 20(1):45-57, 2001.
     
-15. Zhang, Y. and Brady, M. and Smith, S. Segmentation of brain MR images through a hidden Markov random field model and the expectation-maximization algorithm. IEEE Trans Med Imag, 20(1):45-57, 2001.
-    
-16. M. Jenkinson and S.M. Smith. A global optimisation method for robust affine registration of brain images. Medical Image Analysis, 5(2):143-156, 2001. 
+15. M. Jenkinson and S.M. Smith. A global optimisation method for robust affine registration of brain images. Medical Image Analysis, 5(2):143-156, 2001. 
 
-17. M. Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith. Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage, 17(2):825-841, 2002. 
+16. M. Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith. Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage, 17(2):825-841, 2002. 
+
+17. Kruper, J., Yeatman, J. D., Richie-Halford, A., Bloom, D., Grotheer, M., Caffarra, S., Kiar, G., Karipidis, I. I., Roy, E., Chandio, B. Q., Garyfallidis, E., & Rokem, A. Evaluating the Reliability of Human Brain White Matter Tractometry. DOI:10.52294/e6198273-b8e3-4b63-babb-6e6b0da10669
+
+18. Sijbers, J., den Dekker, A. J., Scheunders, P., & Van Dyck, D. (1998). Maximum-likelihood estimation of Rician distribution parameters. IEEE Transactions on Medical Imaging, 17(3), 357–361.
