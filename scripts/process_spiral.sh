@@ -1,10 +1,30 @@
 #!/bin/bash
 
+usage="$(basename "$0") [-h] [-t T1_FILE] [-m] [-e] DIFF_FILE -- Axon diameter estimation from spiral data
+
+where:
+    DIFF_FILE    Spiral diffusion images
+    -h           show this help text
+    -t T1_FILE   Do white matter masking with T1 data
+    -e           Use maximum likelihood estimator instead of denoising & Rician bias correction
+    -m           Do denoising on magnitude instead of complex data (only if -e is not selected)"
+
 # option
 mag_flag=false
-while getopts "m" mag; do
-    mag_flag=true
-    echo "Denoising after conversion to magnitude images."
+mle_flag=false
+while getopts "ht:me" opt; do
+    case $opt in
+        h) echo "$usage"
+        exit
+        ;;
+        t) T1_FILE=${OPTARG} ;;
+        d) mag_flag=true ;;
+        e) mle_flag=true ;;
+        \?) printf "illegal option: -%s\n" "$OPTARG" >&2
+        echo "$usage" >&2
+        exit 1
+        ;;
+    esac
 done
 shift "$((OPTIND-1))"
 
@@ -12,25 +32,26 @@ shift "$((OPTIND-1))"
 if [ "$#" -lt 1 ]; then
     echo "Input file missing"
     exit 1
-elif [ "$#" -lt 2 ]; then
-    echo "No T1 file specified, dont do white matter masking."
-    IN_FILE="$1"
 else
     IN_FILE="$1"
-    T1_FILE="$2"
 fi
 
 IN_FILE_PREFIX=${IN_FILE%%.*}
 IN_FILE_PATH=$(dirname $IN_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-if $mag_flag; then
+if $mle_flag; then
     # Convert to magnitude
     python "${SCRIPTPATH}/nifti2mag.py" ${IN_FILE} "${IN_FILE_PREFIX}_mag.nii.gz"
     # Estimate noise for SH decomposition
     dwiextract -force -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" -shells 0,6000 "${IN_FILE_PREFIX}_mag.nii.gz" "${IN_FILE_PREFIX}_mag_lowb.nii.gz"
     dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_mag_lowb.nii.gz"  "${IN_FILE_PREFIX}_mag_lowb_denoised.nii.gz"
     cp "${IN_FILE_PREFIX}_mag.nii.gz" "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+elif $mag_flag; then
+    # Convert to magnitude
+    python "${SCRIPTPATH}/nifti2mag.py" ${IN_FILE} "${IN_FILE_PREFIX}_mag.nii.gz"
+    # Denoising
+    dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_mag.nii.gz" "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
 else
     # Denoising
     dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PREFIX}_denoised.nii.gz"
@@ -73,13 +94,18 @@ bet "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_moco_unwa
 fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz"
 
 # Spherical harmonic decomposition
-if $mag_flag; then
+if $mle_flag; then
     matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;fitSH('${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz', '${IN_FILE_PREFIX}_noise_map.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PREFIX}');exit"
     gzip -f "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii"
     gzip -f "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii"
 else
-    amp2sh -force -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-    amp2sh -force -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    if $mag_flag; then
+        amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+        amp2sh -force -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    else
+        amp2sh -force -lmax 6 -shells 0,6000 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+        amp2sh -force -lmax 6 -shells 0,30450 -normalise -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    fi
     # Extract 0th order coefficients
     fslsplit "${IN_FILE_PREFIX}_sh_b6000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_split"
     fslsplit "${IN_FILE_PREFIX}_sh_b30000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_split"

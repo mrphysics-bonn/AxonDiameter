@@ -9,7 +9,7 @@ Before processing EPI data, the b-vectors should be corrected with the submodule
 
 Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
-1. Denoising (MRtrix3: "dwidenoise") preferably on complex data [1]
+1. Denoising (MRtrix3: "dwidenoise") [1]. If the maximum-likelihood estimator is used for spherical harmonic decomposition (step 8), the denoising is only done to get the noise map.
 
 2. Convert to magnitude data ("nifti2mag.py")
      
@@ -38,7 +38,7 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
        
 12. White matter masking of axon radius maps (FSL FAST [14] & FSL FLIRT [15, 16]) 
 
-13. Along-fibre quantification currently only along the left CST (using pyAFQ for along-fibre quantification [17] and MrTrix for tractography [11])
+13. Along-fibre quantification currently only along the left CST (using Dipy for along-fibre quantification [17] and MrTrix for tractography [11])
 
 ## Requirements
 
@@ -83,6 +83,6 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
 16. M. Jenkinson, P.R. Bannister, J.M. Brady, and S.M. Smith. Improved optimisation for the robust and accurate linear registration and motion correction of brain images. NeuroImage, 17(2):825-841, 2002. 
 
-17. Kruper, J., Yeatman, J. D., Richie-Halford, A., Bloom, D., Grotheer, M., Caffarra, S., Kiar, G., Karipidis, I. I., Roy, E., Chandio, B. Q., Garyfallidis, E., & Rokem, A. Evaluating the Reliability of Human Brain White Matter Tractometry. DOI:10.52294/e6198273-b8e3-4b63-babb-6e6b0da10669
+17. Yeatman, Jason D., Robert F. Dougherty, Nathaniel J. Myall, Brian A. Wandell, and Heidi M. Feldman. 2012. “Tract Profiles of White Matter Properties: Automating Fiber-Tract Quantification” PloS One 7 (11): e49790.
 
 18. Sijbers, J., den Dekker, A. J., Scheunders, P., & Van Dyck, D. (1998). Maximum-likelihood estimation of Rician distribution parameters. IEEE Transactions on Medical Imaging, 17(3), 357–361.

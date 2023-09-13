@@ -1,5 +1,31 @@
 #!/bin/bash
 
+usage="$(basename "$0") [-h] [-t T1_FILE] [-e] DIFF_FILE PA_FILE -- Axon diameter estimation from EPI data
+
+where:
+    DIFF_FILE    EPI diffusion images
+    PA_FILE      EPI with inverted PE
+    -h           show this help text
+    -t T1_FILE   Do white matter masking with T1 data
+    -e           Use maximum likelihood estimator instead of denoising & Rician bias correction"
+
+# option
+mle_flag=false
+while getopts "ht:me" opt; do
+    case $opt in
+        h) echo "$usage"
+        exit
+        ;;
+        t) T1_FILE=${OPTARG} ;;
+        e) mle_flag=true ;;
+        \?) printf "illegal option: -%s\n" "$OPTARG" >&2
+        echo "$usage" >&2
+        exit 1
+        ;;
+    esac
+done
+shift "$((OPTIND-1))"
+
 # input
 if [ "$#" -lt 1 ]; then
     echo "AP file missing"
@@ -7,24 +33,23 @@ if [ "$#" -lt 1 ]; then
 elif [ "$#" -lt 2 ]; then
     echo "PA file missing"
     exit 1
-elif [ "$#" -lt 3 ]; then
-    echo "No T1 file specified, dont do white matter masking."
-    IN_FILE="$1"
-    PA_FILE="$2"
 else
     IN_FILE="$1"
     PA_FILE="$2"
-    T1_FILE="$3"
 fi
 
 IN_FILE_PREFIX=${IN_FILE%%.*}
 IN_FILE_PATH=$(dirname $IN_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-# Estimate noise for spherical harmonic decomposition
-dwiextract -force -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" -shells 0,6000 ${IN_FILE} "${IN_FILE_PREFIX}_mag_lowb.nii.gz"
-dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_mag_lowb.nii.gz"  "${IN_FILE_PREFIX}_mag_lowb_denoised.nii.gz"
-cp ${IN_FILE} "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+if $mle_flag; then
+    # Estimate noise for spherical harmonic decomposition
+    dwiextract -force -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" -shells 0,6000 ${IN_FILE} "${IN_FILE_PREFIX}_mag_lowb.nii.gz"
+    dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" "${IN_FILE_PREFIX}_mag_lowb.nii.gz"  "${IN_FILE_PREFIX}_mag_lowb_denoised.nii.gz"
+    cp ${IN_FILE} "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+else
+    dwidenoise -force -noise "${IN_FILE_PREFIX}_noise_map.nii.gz" ${IN_FILE} "${IN_FILE_PREFIX}_denoised_mag.nii.gz"
+fi
 
 # Convert nii to mif
 mrconvert -force "${IN_FILE_PREFIX}_denoised_mag.nii.gz" -fslgrad "${IN_FILE_PREFIX}.bvec" "${IN_FILE_PREFIX}.bval" "${IN_FILE_PREFIX}_denoised_mag.mif"
@@ -66,15 +91,33 @@ bet "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_moco_unwa
 # Apply brain mask
 fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz"
 
-# Spherical harmonic decomposition with MLE
-matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;fitSH('${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz', '${IN_FILE_PREFIX}_noise_map.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PREFIX}');exit"
+if $mle_flag; then
+    # Spherical harmonic decomposition with MLE
+    matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;fitSH('${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz', '${IN_FILE_PREFIX}_noise_map.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PREFIX}');exit"
+else
+    # Spherical harmonic decomposition
+    # Rician bias correction needs up to commit aea92a8 from https://github.com/lukeje/mrtrix3
+    # Calculate one dataset without normalization for relative noise estimation
+    amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    # Extract 0th order coefficients
+    fslsplit "${IN_FILE_PREFIX}_sh_b6000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_split"
+    fslsplit "${IN_FILE_PREFIX}_sh_b30000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_split"
+    /bin/mv "${IN_FILE_PREFIX}_sh_b6000_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+    /bin/mv "${IN_FILE_PREFIX}_sh_b30000_split0000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    /bin/rm "${IN_FILE_PATH}/"*"split"*
+    # Divide by sqrt(4pi) to get powder average
+    fslmaths "${IN_FILE_PREFIX}_sh_b6000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+    fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+fi
 
-# # Register decomposed shells as sometimes eddy causes a shift between the two shells - remove nans and negatives first
+# Register decomposed shells as sometimes eddy causes a shift between the two shells - remove nans and negatives first
 gzip -f "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii"
 gzip -f "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii"
 fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 -uthr 1.5 "${IN_FILE_PREFIX}_sh_b6000_powderavg"
 fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 -uthr 1.5 "${IN_FILE_PREFIX}_sh_b30000_powderavg"
 flirt -ref "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+flirt -ref "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
 
 # Calculate axon diameters
 matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz', '${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PATH}/grad_dev.nii.gz');exit"
