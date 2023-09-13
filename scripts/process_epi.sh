@@ -94,6 +94,8 @@ fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_moco_u
 if $mle_flag; then
     # Spherical harmonic decomposition with MLE
     matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;fitSH('${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz', '${IN_FILE_PREFIX}_noise_map.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PREFIX}');exit"
+    gzip -f "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii"
+    gzip -f "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii"
 else
     # Spherical harmonic decomposition
     # Rician bias correction needs up to commit aea92a8 from https://github.com/lukeje/mrtrix3
@@ -112,10 +114,8 @@ else
 fi
 
 # Register decomposed shells as sometimes eddy causes a shift between the two shells - remove nans and negatives first
-gzip -f "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii"
-gzip -f "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii"
-fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 -uthr 1.5 "${IN_FILE_PREFIX}_sh_b6000_powderavg"
-fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 -uthr 1.5 "${IN_FILE_PREFIX}_sh_b30000_powderavg"
+fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b6000_powderavg"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b30000_powderavg"
 flirt -ref "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 flirt -ref "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
 
