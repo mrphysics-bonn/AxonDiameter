@@ -50,10 +50,6 @@ def main(args):
     #                             not bother with cleaning outliers. 
 
     dwi_nib = nib.load(dwi_path)
-    dwi_data = dwi_nib.get_fdata()
-
-    affine, dimensions, voxel_sizes, voxel_order = get_reference_info(dwi_nib)
-    nifti_header = create_nifti_header(affine, dimensions, voxel_sizes)
 
     tractogram = load_tractogram(tck_path, dwi_nib, trk_header_check = True)
     if not len(tractogram) == 0:

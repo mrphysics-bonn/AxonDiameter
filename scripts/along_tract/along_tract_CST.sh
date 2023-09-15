@@ -2,9 +2,17 @@
 
 set -e
 
+force=false
+while getopts "f" opt; do
+    case $opt in
+        f) force=true
+    esac
+done
+shift $((OPTIND-1))
+
 # input
 if [ "$#" -lt 5 ]; then
-    echo "Not enough input arguments. Expected 4 inputs: DWI_DATA T1_DATA POWDER_AVG_SHELL1 POWDER_AVG_SHELL2 BRAIN_MASK"
+    echo "Not enough input arguments. Expected 5 inputs: DWI_DATA T1_DATA POWDER_AVG_SHELL1 POWDER_AVG_SHELL2 BRAIN_MASK"
     exit 1
 else
     IN_FILE="$1"
@@ -36,20 +44,20 @@ dwi_mean_nii="${IN_FILE_PREFIX}_meanb0.nii.gz"
 WM_txt=$working_dir/wm_response.txt
 GM_txt=$working_dir/gm_response.txt
 CSF_txt=$working_dir/csf_response.txt
-if [ ! -f $WM_txt ]
+if [ ! -f $WM_txt ] || [ "$force" == "true" ];
 then
     echo "Starting with dwi2response."
-    dwi2response dhollander -mask $MASK_FILE $dwi_mif $WM_txt $GM_txt $CSF_txt
+    dwi2response dhollander -force -mask $MASK_FILE $dwi_mif $WM_txt $GM_txt $CSF_txt
 fi
 
 # creating the fiber orientation distributions for each tissue
 WM_fod=$working_dir/wm_fod.mif
 GM_fod=$working_dir/gm_fod.mif
 CSF_fod=$working_dir/csf_fod.mif
-if [ ! -f $WM_fod ]
+if [ ! -f $WM_fod ] || [ "$force" == "true" ];
 then
     echo "Starting with dwi2fod."
-    dwi2fod msmt_csd -mask $MASK_FILE $dwi_mif $WM_txt $WM_fod $GM_txt $GM_fod $CSF_txt $CSF_fod
+    dwi2fod msmt_csd -force -mask $MASK_FILE $dwi_mif $WM_txt $WM_fod $GM_txt $GM_fod $CSF_txt $CSF_fod
 fi
 
 # ----- Get waypoints(=ROIs) -----
@@ -58,10 +66,10 @@ mkdir -p $ROIs_folder
 type_of_transform_matrix=SyN
 
 # Register T1 to DWI
-if [ ! -f $T1_in_dwi_space_mif ]
+if [ ! -f $T1_in_dwi_space_mif ] || [ "$force" == "true" ];
 then
     python $SCRIPTPATH/coreg_T1_dwi.py $dwi_mean_nii $T1_FILE $T1_in_dwi_space_nii $type_of_transform_matrix
-    mrconvert $T1_in_dwi_space_nii $T1_in_dwi_space_mif
+    mrconvert -force $T1_in_dwi_space_nii $T1_in_dwi_space_mif
 fi
 
 # Inclusion ROIs
@@ -72,22 +80,22 @@ CST_2R_orig_file=$SCRIPTPATH/templates/CST_roi2_R.nii.gz
 # left 1 
 CST_1L_roi=$ROIs_folder/CST_1_left.nii.gz
 CST_1L_roi_mif=$ROIs_folder/CST_1_left.mif
-if [ ! -f $CST_1L_roi_mif ]
+if [ ! -f $CST_1L_roi_mif ] || [ "$force" == "true" ];
 then
     echo "Register first CST ROI to DWI"
     cp $CST_1L_orig_file $CST_1L_roi
     python $SCRIPTPATH/coreg_roi2dwi.py $T1_in_dwi_space_nii $MNI_T1_path $CST_1L_roi $type_of_transform_matrix
-    mrconvert $CST_1L_roi $CST_1L_roi_mif
+    mrconvert -force $CST_1L_roi $CST_1L_roi_mif
 fi
 # left 2
 CST_2L_roi=$ROIs_folder/CST_2_left.nii.gz
 CST_2L_roi_mif=$ROIs_folder/CST_2_left.mif
-if [ ! -f $CST_2L_roi_mif ]
+if [ ! -f $CST_2L_roi_mif ] || [ "$force" == "true" ];
 then
     echo "Register second CST ROI to DWI"
     cp $CST_2L_orig_file $CST_2L_roi
     python $SCRIPTPATH/coreg_roi2dwi.py $T1_in_dwi_space_nii $MNI_T1_path $CST_2L_roi $type_of_transform_matrix
-    mrconvert $CST_2L_roi $CST_2L_roi_mif
+    mrconvert -force $CST_2L_roi $CST_2L_roi_mif
 fi
 
 # ----- streamlines generation - CST ------
@@ -95,10 +103,10 @@ fi
 CST_L_folder=$saving_dir/CST_L
 mkdir -p $CST_L_folder
 CST_L=$CST_L_folder/CST_L.tck
-if [ ! -f $CST_L ]
+if [ ! -f $CST_L ] || [ "$force" == "true" ];
 then
     echo "Start generating streamlines."
-    tckgen -seed_image $CST_1L_roi_mif -include $CST_1L_roi_mif -include $CST_2L_roi_mif $WM_fod $CST_L -minlength 50 -cutoff 0.1 -angle 30 -select 3000 -seeds 25M -force
+    tckgen -force -seed_image $CST_1L_roi_mif -include $CST_1L_roi_mif -include $CST_2L_roi_mif $WM_fod $CST_L -minlength 50 -cutoff 0.1 -angle 30 -select 3000 -seeds 25M -force
 fi
 # ----- streamlines 1) cleaning; 2) cropping between 1st and last ROIs ------
 
@@ -110,7 +118,7 @@ distance_threshold=3
 length_threshold=3
 n_points=100
 
-if [ ! -f $cleaned_CST_L ]
+if [ ! -f $cleaned_CST_L ] || [ "$force" == "true" ];
 then
     echo "Start cleaning streamlines."
     python3 $SCRIPTPATH/cleaning.py $dwi_nii $CST_L $cleaned_CST_L $min_sl $clean_rounds $distance_threshold $length_threshold $n_points
@@ -118,7 +126,7 @@ fi
 
 temporary_txt=$CST_L_folder/clipped.txt
 clipped_CST_L=$CST_L_folder/CST_L_clipped.tck
-if [ ! -f $clipped_CST_L ]
+if [ ! -f $clipped_CST_L ] || [ "$force" == "true" ];
 then
     echo "Start clipping streamlines."
     python3 $SCRIPTPATH/clipping_between_regions.py $dwi_nii $cleaned_CST_L $clipped_CST_L $CST_1L_roi_mif $CST_2L_roi_mif $temporary_txt
@@ -127,12 +135,12 @@ fi
 CST_L_mapped=$CST_L_folder/CST_L_map.nii
 cleaned_CST_L_mapped=$CST_L_folder/CST_L_cleaned_map.nii
 clipped_CST_L_mapped=$CST_L_folder/CST_L_clipped_map.nii
-if [ ! -f $CST_L_mapped ]
+if [ ! -f $CST_L_mapped ] || [ "$force" == "true" ];
 then
     echo "Start tract-density mapping"
-    tckmap -template $dwi_nii $CST_L $CST_L_mapped
-    tckmap -template $dwi_nii $cleaned_CST_L $cleaned_CST_L_mapped
-    tckmap -template $dwi_nii $clipped_CST_L $clipped_CST_L_mapped
+    tckmap -force -template $dwi_nii $CST_L $CST_L_mapped
+    tckmap -force -template $dwi_nii $cleaned_CST_L $cleaned_CST_L_mapped
+    tckmap -force -template $dwi_nii $clipped_CST_L $clipped_CST_L_mapped
 fi
 # # ----- profiling -----
 
@@ -141,50 +149,50 @@ echo "Start profiling"
 # Axon Radius map
 axon_path=$IN_FILE_PATH/AxonRadiusMap.nii
 path_out0=$CST_L_folder/CST_stats_Axon.txt
-if [ ! -f $path_out0 ]
+if [ ! -f $path_out0 ] || [ "$force" == "true" ];
 then
-    python3 $SCRIPTPATH/profile_fiber.py $axon_path $dwi_nii $cleaned_CST_L $path_out0 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $axon_path $cleaned_CST_L $path_out0 $n_points
 fi
 
 axon_path=$IN_FILE_PATH/AxonRadiusMap.nii
 path_out_reg0=$CST_L_folder/CST_stats_between_regions_Axon.txt
-if [ ! -f $path_out_reg0 ]
+if [ ! -f $path_out_reg0 ] || [ "$force" == "true" ];
 then
-    python3 $SCRIPTPATH/profile_fiber.py $axon_path $dwi_nii $clipped_CST_L $path_out_reg0 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $axon_path $clipped_CST_L $path_out_reg0 $n_points
 fi
 
 # powder-averaged shell b=6000
 grads6000_path=$IN_FILE_PATH/grads_6000.nii
 path_out1=$CST_L_folder/CST_stats_sh6000.txt
 path_out_grads1=$CST_L_folder/CST_grads_6000.txt
-if [ ! -f $path_out1 ]
+if [ ! -f $path_out1 ] || [ "$force" == "true" ];
 then
-    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE1 $dwi_nii $cleaned_CST_L $path_out1 $n_points
-    python3 $SCRIPTPATH/profile_fiber.py $grads6000_path $dwi_nii $cleaned_CST_L $path_out_grads1 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE1 $cleaned_CST_L $path_out1 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $grads6000_path $cleaned_CST_L $path_out_grads1 $n_points
 fi
 
 path_out_reg1=$CST_L_folder/CST_stats_between_regions_sh6000.txt
 path_out_grads_reg1=$CST_L_folder/CST_grads_between_regions_6000.txt
-if [ ! -f $path_out_reg1 ]
+if [ ! -f $path_out_reg1 ] || [ "$force" == "true" ];
 then
-    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE1 $dwi_nii $clipped_CST_L $path_out_reg1 $n_points
-    python3 $SCRIPTPATH/profile_fiber.py $grads6000_path $dwi_nii $clipped_CST_L $path_out_grads_reg1 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE1 $clipped_CST_L $path_out_reg1 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $grads6000_path $clipped_CST_L $path_out_grads_reg1 $n_points
 fi
 
 # powder-averaged shell b=30450
 grads30000_path=$IN_FILE_PATH/grads_30000.nii
 path_out2=$CST_L_folder/CST_stats_sh30000.txt
 path_out_grads2=$CST_L_folder/CST_grads_30000.txt
-if [ ! -f $path_out2 ]
+if [ ! -f $path_out2 ] || [ "$force" == "true" ];
 then
-    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE2 $dwi_nii $cleaned_CST_L $path_out2 $n_points
-    python3 $SCRIPTPATH/profile_fiber.py $grads30000_path $dwi_nii $cleaned_CST_L $path_out_grads2 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE2 $cleaned_CST_L $path_out2 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $grads30000_path $cleaned_CST_L $path_out_grads2 $n_points
 fi
 
 path_out_reg2=$CST_L_folder/CST_stats_between_regions_sh30000.txt
 path_out_grads_reg2=$CST_L_folder/CST_grads_between_regions_30000.txt
-if [ ! -f $path_out_reg2 ]
+if [ ! -f $path_out_reg2 ] || [ "$force" == "true" ];
 then
-    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE2 $dwi_nii $clipped_CST_L $path_out_reg2 $n_points
-    python3 $SCRIPTPATH/profile_fiber.py $grads30000_path $dwi_nii $clipped_CST_L $path_out_grads_reg2 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $PA_FILE2 $clipped_CST_L $path_out_reg2 $n_points
+    python3 $SCRIPTPATH/profile_fiber.py $grads30000_path $clipped_CST_L $path_out_grads_reg2 $n_points
 fi
