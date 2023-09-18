@@ -23,8 +23,6 @@ def main(args):
 
     ## NORMALISATION OF REF/TEMPLATE TO SUBJECT SPACE - TO GET TRANSFORMATION MATRIX
     mytx = ants.registration(fixed = reference , moving = subject, type_of_transform = type_of_transform_matrix)
-    print(mytx)
-    # warped_moving = mytx['warpedmovout']
 
     ## APLICATION OF TRANSF MATRIX ON THE ROI TO BECOME IN THE SUBJECT SPACE
     mywarpedimage = ants.apply_transforms(fixed = reference, moving = subject, transformlist = mytx['fwdtransforms'])

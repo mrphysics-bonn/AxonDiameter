@@ -19,6 +19,9 @@ from dipy.segment.featurespeed import ResampleFeature
 
 from dipy.io.streamline import load_tractogram
 from dipy.io.image import load_nifti
+from dipy.io.streamline import load_trk
+from dipy.data.fetcher import get_two_hcp842_bundles
+from dipy.data import fetch_bundle_atlas_hcp842
 
 def main(args):
     map_path = args.map_path
@@ -33,15 +36,20 @@ def main(args):
     tractogram = load_tractogram(tck_path, reference=map_path, bbox_valid_check=False)
     streamlines = tractogram.streamlines
 
-    # re
+    # calculate centroid line from model bundle
+    fetch_bundle_atlas_hcp842()
+    _, model_cst_l_file = get_two_hcp842_bundles()
+    model_cst_l = load_trk(model_cst_l_file, "same", bbox_valid_check=False).streamlines
     feature = ResampleFeature(nb_points=n_points)
     metric = AveragePointwiseEuclideanMetric(feature)
     qb = QuickBundles(np.inf, metric=metric)
-    cluster_tract = qb.cluster(streamlines)
+    cluster_tract = qb.cluster(model_cst_l)
     standard_tract = cluster_tract.centroids[0]
+
+    # orient tracts and calculate profile
     oriented_tract = dts.orient_by_streamline(streamlines, standard_tract)
     map_data, affine = load_nifti(map_path)
-    weights = dsa.gaussian_weights(streamlines, n_points=n_points)
+    weights = dsa.gaussian_weights(oriented_tract, n_points=n_points)
     profile = dsa.afq_profile(map_data, oriented_tract, affine, weights=weights, n_points = n_points)
 
     np.savetxt(path_out, profile)
