@@ -114,10 +114,11 @@ else
 fi
 
 # Register decomposed shells as sometimes eddy causes a shift between the two shells - remove nans and negatives first
-fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b6000_powderavg"
-fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b30000_powderavg"
-flirt -ref "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
-flirt -ref "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+mv "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg_nonreg.nii.gz"
+fnirt --ref="${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" --in="${IN_FILE_PREFIX}_sh_b30000_powderavg_nonreg.nii.gz" --interp=spline --iout="${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -mul "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 
 # Calculate axon diameters
 matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz', '${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PATH}/grad_dev.nii.gz');exit"
