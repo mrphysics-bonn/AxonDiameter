@@ -13,7 +13,6 @@ import os.path as op
 import numpy as np
 import nibabel as nib
 from dipy.io.streamline import load_tractogram
-from dipy.io.utils import (create_nifti_header, get_reference_info)
                            
 import AFQ.segmentation as seg
 from dipy.io.utils import create_tractogram_header
@@ -53,26 +52,25 @@ def main(args):
 
     tractogram = load_tractogram(tck_path, dwi_nib, trk_header_check = True)
     if not len(tractogram) == 0:
-        if not op.isfile(tck_cleaned_path):
-            print(f"Before cleaning: {len(tractogram)} streamlines")
-            
-            tractogram_cleaned = seg.clean_bundle(tractogram, n_points = n_points, clean_rounds = clean_rounds, 
-                distance_threshold = distance_threshold,length_threshold = length_threshold, min_sl = min_sl, stat = 'mean',return_idx = False)
-            
-            print(f"After cleaning: {len(tractogram_cleaned)} streamlines")
+        print(f"Before cleaning: {len(tractogram)} streamlines")
         
-            # creating header so that we can save the cleaned fibers properly
-            tractogram_type = detect_format(tck_path)
-            header = create_tractogram_header(tractogram_type, *tractogram_cleaned.space_attributes)
-            new_tractogram = Tractogram(tractogram_cleaned.streamlines, affine_to_rasmm = np.eye(4))
+        tractogram_cleaned = seg.clean_bundle(tractogram, n_points = n_points, clean_rounds = clean_rounds, 
+            distance_threshold = distance_threshold,length_threshold = length_threshold, min_sl = min_sl, stat = 'mean',return_idx = False)
         
+        print(f"After cleaning: {len(tractogram_cleaned)} streamlines")
+    
+        # creating header so that we can save the cleaned fibers properly
+        tractogram_type = detect_format(tck_path)
+        header = create_tractogram_header(tractogram_type, *tractogram_cleaned.space_attributes)
+        new_tractogram = Tractogram(tractogram_cleaned.streamlines, affine_to_rasmm = np.eye(4))
+    
+    
+        new_tractogram.data_per_point = tractogram_cleaned.data_per_point
+        new_tractogram.data_per_streamline = tractogram_cleaned.data_per_streamline
+    
+        fileobj = tractogram_type(new_tractogram, header = header)
         
-            new_tractogram.data_per_point = tractogram_cleaned.data_per_point
-            new_tractogram.data_per_streamline = tractogram_cleaned.data_per_streamline
-        
-            fileobj = tractogram_type(new_tractogram, header = header)
-            
-            nib.streamlines.save(fileobj, tck_cleaned_path)
+        nib.streamlines.save(fileobj, tck_cleaned_path)
     else:
         raise ValueError("Empty tractogram. Exiting.")
 

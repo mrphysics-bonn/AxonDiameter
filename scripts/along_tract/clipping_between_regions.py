@@ -10,12 +10,10 @@ Created on Sun Jul 17 17:30:02 2022
 
 import argparse
 import os
-import os.path as op
 import numpy as np
 import nibabel as nib
 from dipy.io.streamline import save_tractogram, load_tractogram
 from dipy.io.stateful_tractogram import Space
-# from dipy.io.utils import create_nifti_header, get_reference_info
 from dipy.io.stateful_tractogram import StatefulTractogram
 
 def main(args):
@@ -45,74 +43,72 @@ def main(args):
     cc_sft = load_tractogram(tck_path, reference_anatomy, bbox_valid_check=False)
 
     if not len(cc_sft) == 0:
-        if not op.isfile(tck_clipped_path):    
-                # attention: if negative values once in voxel space, these files contain invalid streamlines. use arg bbox_valid_check=False
-                print(cc_sft.space)
-                cc_sft.to_vox()
+        # attention: if negative values once in voxel space, these files contain invalid streamlines. use arg bbox_valid_check=False
+        cc_sft.to_vox()
+
+        # remove invalid streamlines 
+        cc_sft.remove_invalid_streamlines()
+        os.system('maskdump ' + roi1_path + ' > ' + temporary_txt)
+        txt_roi1 = np.loadtxt(temporary_txt) 
+        txt_roi1[:,0] = dwi_data.shape[0] - txt_roi1[:,0]
+
+        os.system('maskdump ' + roi2_path + ' > ' + temporary_txt)
+        txt_roi2 = np.loadtxt(temporary_txt) 
+        txt_roi2[:,0] = dwi_data.shape[0] - txt_roi2[:,0]
+        all_new_streamlines = []
         
-                # remove invalid streamlines 
-                cc_sft.remove_invalid_streamlines()
-                os.system('maskdump ' + roi1_path + ' > ' + temporary_txt)
-                txt_roi1 = np.loadtxt(temporary_txt) 
-                txt_roi1[:,0] = dwi_data.shape[0] - txt_roi1[:,0]
         
-                os.system('maskdump ' + roi2_path + ' > ' + temporary_txt)
-                txt_roi2 = np.loadtxt(temporary_txt) 
-                txt_roi2[:,0] = dwi_data.shape[0] - txt_roi2[:,0]
-                all_new_streamlines = []
-                
-                
-                if len(cc_sft.streamlines) > 1:
-                    for idx_streamlines in range(len(cc_sft.streamlines)): # enumerate streamlines
-                        select_sl = list(cc_sft.streamlines[idx_streamlines]) #one streamline selected
-                
-                        dist_roi1 = np.zeros((len(select_sl),len(txt_roi1)))
-                        dist_roi2 = np.zeros((len(select_sl),len(txt_roi2)))                      
-                        
-                        for streamline_points in range(len(select_sl)):
-                            a1 = select_sl[streamline_points]
-                            matrix1 = np.ones([len(txt_roi1),3])
-                            result1 =  a1 * matrix1
-            
-                            dist_roi1[streamline_points,:] = np.linalg.norm(result1 - txt_roi1, axis=1)
-                            
-                            a2 = select_sl[streamline_points]
-                            matrix2 = np.ones([len(txt_roi2),3])
-                            result2 =  a2 * matrix2
-            
-                            dist_roi2[streamline_points,:] = np.linalg.norm(result2 - txt_roi2, axis=1)
+        if len(cc_sft.streamlines) > 1:
+            for idx_streamlines in range(len(cc_sft.streamlines)): # enumerate streamlines
+                select_sl = list(cc_sft.streamlines[idx_streamlines]) #one streamline selected
         
-                        minValue1 = np.min(dist_roi1)
-                        location1 = np.where(dist_roi1==minValue1)        
-                        minValue2 = np.min(dist_roi2)
-                        location2 = np.where(dist_roi2==minValue2)  
-                        
-                        
-                        if len(location1[0])>1:
-                            location1 = location1[0]
-                        if len(location2[0])>1:
-                            location2 = location2[0]
+                dist_roi1 = np.zeros((len(select_sl),len(txt_roi1)))
+                dist_roi2 = np.zeros((len(select_sl),len(txt_roi2)))                      
                 
-                        locat1 = np.int(location1[0])# use int instead of np.int to silence teh warning
-                        locat2 = np.int(location2[0])
-                        
-                        if not locat1 == 0:
-                            if locat1<locat2:
-                                streamline = np.array(select_sl[locat1 :locat2])
-                            elif locat1>locat2:
-                                streamline = np.array(select_sl[locat2 :locat1])
-                            else:
-                                locat1 = locat1 - 1
-                                locat2 = locat2 + 1
-                                streamline = np.array(select_sl[locat1:locat2])
-                        
-                            all_new_streamlines.append(np.array(streamline))    
-                            
+                for streamline_points in range(len(select_sl)):
+                    a1 = select_sl[streamline_points]
+                    matrix1 = np.ones([len(txt_roi1),3])
+                    result1 =  a1 * matrix1
+    
+                    dist_roi1[streamline_points,:] = np.linalg.norm(result1 - txt_roi1, axis=1)
                     
-                    new_tract = StatefulTractogram(all_new_streamlines,reference_anatomy,
-                                                                Space.VOX)
+                    a2 = select_sl[streamline_points]
+                    matrix2 = np.ones([len(txt_roi2),3])
+                    result2 =  a2 * matrix2
+    
+                    dist_roi2[streamline_points,:] = np.linalg.norm(result2 - txt_roi2, axis=1)
+
+                minValue1 = np.min(dist_roi1)
+                location1 = np.where(dist_roi1==minValue1)        
+                minValue2 = np.min(dist_roi2)
+                location2 = np.where(dist_roi2==minValue2)  
+                
+                
+                if len(location1[0])>1:
+                    location1 = location1[0]
+                if len(location2[0])>1:
+                    location2 = location2[0]
         
-                    save_tractogram(new_tract,tck_clipped_path)
+                locat1 = np.int(location1[0])# use int instead of np.int to silence teh warning
+                locat2 = np.int(location2[0])
+                
+                if not locat1 == 0:
+                    if locat1<locat2:
+                        streamline = np.array(select_sl[locat1 :locat2])
+                    elif locat1>locat2:
+                        streamline = np.array(select_sl[locat2 :locat1])
+                    else:
+                        locat1 = locat1 - 1
+                        locat2 = locat2 + 1
+                        streamline = np.array(select_sl[locat1:locat2])
+                
+                    all_new_streamlines.append(np.array(streamline))    
+                    
+            
+            new_tract = StatefulTractogram(all_new_streamlines,reference_anatomy,
+                                                        Space.VOX)
+
+            save_tractogram(new_tract,tck_clipped_path)
     else:
         raise ValueError("Empty tractogram. Exiting.")
     
