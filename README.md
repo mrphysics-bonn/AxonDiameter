@@ -48,10 +48,11 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 - AxonRadiusMapping (included submodule)
 - Python (incl. Numpy, Nibabel 3.2.2 (< version 4))
 - Matlab
+- Antspy (for along-fibre quantification and brain extraction)
+- Antspynet (for brain extraction)
 For along-fibre quantification:
 - Dipy
 - PyAFQ
-- Antspy
 
 ## References
 
