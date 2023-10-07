@@ -2,12 +2,12 @@
 
 Processing for spiral data can be started running scripts/process_spiral.sh #IN_FILE.
 Processing for EPI data can be started running scripts/process_epi.sh #IN_FILE #IN_FILE_PA.
+With option "-t" a T1 image can be provided to do white matter segmentation and along-tract evaluation of the axon diameter.
+Option "-e" selects a maximum-likelihood estimation for spherical harmonic fitting insted of denoising the data directly, option "-m" converts spiral data from complex to magnitude before denoising.
 
 Before processing EPI data, the b-vectors should be corrected with the submodule "correctBmatrixOverflow", which corrects for an integer overflow leading to partly wrong b-vectors. Resulting b-vectors have to be transformed to Nifti space with the function "transformForNifti".
 
 ## Preprocessing & Axon diameter calculation
-
-Steps 1 & 2 can be interchanged, if only magnitude data is available.
 
 1. Denoising (MRtrix3: "dwidenoise") [1]. If the maximum-likelihood estimator is used for spherical harmonic decomposition (step 8), the denoising is only done to get the noise map.
 
@@ -22,13 +22,13 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
 5. Spiral
    - Motion correction (FSL Eddy)
 
-6. Gradient nonlinearity correction (is essential due to high b-values/strong gradients) [7,8]
+6. Gradient nonlinearity correction (needs scanner specific proprietary file containing the coefficients of the gradient system) [7,8]
    - GradientDistortionUnwarp.sh (needs https://github.com/Washington-University/gradunwarp)
    - includes b-vector correction (gradient nonlinearity correction leads to different b-values/b-vectors in different voxels)
 
-7. Brain masking (FSL BET) [9]
+7. Brain masking (Antspy & Antspynet) [9]
 
-8. Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh [11] for complex-denoised data, maximum-likelihood estimator [18] for magnitude data) 
+8. Spherical harmonic decomposition to get spherical average per shell & per voxel (MRtrix3: amp2sh [11] or maximum-likelihood estimator [18]) 
 	
 9. Take the 0th order spherical harmonic and divide by $\sqrt{4\pi}$ to get the powder average [10]
 
@@ -38,21 +38,21 @@ Steps 1 & 2 can be interchanged, if only magnitude data is available.
        
 12. White matter masking of axon radius maps (FSL FAST [14] & FSL FLIRT [15, 16]) 
 
-13. Along-fibre quantification currently only along the left CST (using Dipy for along-fibre quantification [17] and MrTrix for tractography [11])
+13. Along-fibre quantification currently only along the left CST (using Dipy & pyAFQ for along-fibre quantification [17,19] and MrTrix for tractography [11])
 
 ## Requirements
 
 - MRtrix3 (needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3, that fixes a bug in the Rician bias correction)
-- FSL
+- FSL v6 (older version might work)
 - gradunwarp (included submodule)
 - AxonRadiusMapping (included submodule)
 - Python (incl. Numpy, Nibabel 3.2.2 (< version 4))
-- Matlab
-- Antspy (for along-fibre quantification and brain extraction)
-- Antspynet (for brain extraction)
+- Matlab R2019b
+- Antspy (for along-fibre quantification and brain extraction) v0.3.8
+- Antspynet (for brain extraction) v0.2.3
 For along-fibre quantification:
-- Dipy
-- PyAFQ
+- Dipy v1.7.0
+- PyAFQ v1.1
 
 ## References
 
@@ -72,7 +72,7 @@ For along-fibre quantification:
    
 8. Glasser, M. et. al. The minimal preprocessing pipelines for the Human Connectome Project. Neuroimage, 2013;80:105-24
 
-9.  S.M. Smith. Fast robust automated brain extraction. Human Brain Mapping, 17(3):143-155, 2002.
+9.  Cullen N.C., Avants B.B. (2018) Convolutional Neural Networks for Rapid and Simultaneous Brain Extraction and Tissue Segmentation. In: Spalletta G., Piras F., Gili T. (eds) Brain Morphometry. Neuromethods, vol 136. Humana Press, New York, NY
 
 10. Afzali, et al. Computing the orientational-average of diffusion-weighted MRI signals: a comparison of different techniques. Scientific Reports, 11:14345, 2021
 
@@ -91,3 +91,5 @@ For along-fibre quantification:
 17. Yeatman, Jason D., Robert F. Dougherty, Nathaniel J. Myall, Brian A. Wandell, and Heidi M. Feldman. 2012. “Tract Profiles of White Matter Properties: Automating Fiber-Tract Quantification” PloS One 7 (11): e49790.
 
 18. Sijbers, J., den Dekker, A. J., Scheunders, P., & Van Dyck, D. (1998). Maximum-likelihood estimation of Rician distribution parameters. IEEE Transactions on Medical Imaging, 17(3), 357–361.
+
+19. Kruper, J., Yeatman, J. D., Richie-Halford, A., Bloom, D., Grotheer, M., Caffarra, S., Kiar, G., Karipidis, I. I., Roy, E., Chandio, B. Q., Garyfallidis, E., & Rokem, A. Evaluating the Reliability of Human Brain White Matter Tractometry. DOI:10.52294/e6198273-b8e3-4b63-babb-6e6b0da10669
