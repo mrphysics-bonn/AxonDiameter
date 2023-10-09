@@ -41,7 +41,7 @@ fslmaths "${DIF_FILE_PREFIX}_meanb0.nii.gz" -div $NOISE_FILE "${DIF_FILE_PREFIX}
 # Spherical-harmonic decomposition relative SNR map
 fslmaths ${SH_FILE1} -div $NOISE_FILE "${SH_FILE1_PREFIX}_relativeSNR.nii.gz"
 fslmaths ${SH_FILE2} -div $NOISE_FILE "${SH_FILE2_PREFIX}_relativeSNR.nii.gz"
-# Scale with mean b0 as noise map was not normalized
+# Scale with mean b0 as SH were normalized with that
 fslmaths "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR.nii.gz"
 fslmaths "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR.nii.gz"
 
