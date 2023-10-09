@@ -45,10 +45,10 @@ fslmaths ${SH_FILE2} -div $NOISE_FILE "${SH_FILE2_PREFIX}_relativeSNR.nii.gz"
 fslmaths "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR.nii.gz"
 fslmaths "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR.nii.gz"
 
-if test -f "${T1_FILE_PREFIX}_bet.nii.gz" && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
-    flirt -in "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
-    flirt -in "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
-    flirt -in "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
-    fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg_wm.nii.gz"
-    fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg_wm.nii.gz"
+if test -f $T1_FILE && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
+    flirt -in "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz" -ref $T1_FILE -out "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    flirt -in "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -ref $T1_FILE -out "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    flirt -in "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -ref $T1_FILE -out "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg_wm.nii.gz"
 fi

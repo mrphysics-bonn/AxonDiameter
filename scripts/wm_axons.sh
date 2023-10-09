@@ -22,27 +22,11 @@ T1_FILE_PREFIX=${T1_FILE%%.*}
 DIF_FILE_PATH=$(dirname $DIF_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
-if test -f "${T1_FILE_PREFIX}_bet_seg.nii.gz"; then
-    echo "White matter mask already exists. Skip calculation."
-else
-    # Brain extraction
-    python "${SCRIPTPATH}/t1_processing.py" -m $T1_FILE "${T1_FILE_PREFIX}_bet"
-
-    # Create white matter mask from T1 data
-    fast -N "${T1_FILE_PREFIX}_bet.nii.gz"
-    fslmaths "${T1_FILE_PREFIX}_bet_pve_2.nii.gz" -thr 0.85 -bin "${T1_FILE_PREFIX}_bet_seg.nii.gz"
-fi
-
 # Register mean b0 to MPRAGE using the epi_reg script
 mrconvert -force $DIF_FILE -fslgrad "${DIF_FILE_PREFIX}.bvec" "${DIF_FILE_PREFIX}.bval" "${DIF_FILE_PREFIX}.mif"
 dwiextract -force "${DIF_FILE_PREFIX}.mif" - -bzero | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb0.mif" -axis 3
 mrconvert -force "${DIF_FILE_PREFIX}_meanb0.mif" "${DIF_FILE_PREFIX}_meanb0.nii.gz"
 epi_reg --epi="${DIF_FILE_PREFIX}_meanb0.nii.gz" --t1=$T1_FILE --t1brain="${T1_FILE_PREFIX}_bet.nii.gz" --wmseg="${T1_FILE_PREFIX}_bet_seg.nii.gz" --out="${DIF_FILE_PREFIX}_meanb0_reg.nii.gz"
-
-# Or register FA to MPRAGE (6 parameter model) - currently not used
-# calc_FA -i "${DIF_FILE_PREFIX}_bet.nii.gz" -o "${DIF_FILE_PATH}/FA.nii.gz" --bvals "${DIF_FILE_PREFIX}.bval" --bvecs "${DIF_FILE_PREFIX}.bvec" --brain_mask "${DIF_FILE_PREFIX}_mask.nii.gz"
-# flirt -ref "${T1_FILE_PREFIX}_bet.nii.gz" -in "${DIF_FILE_PATH}/FA.nii.gz" -out "${DIF_FILE_PATH}/FA.nii.gz" -omat "${DIF_FILE_PREFIX}_meanb0_reg.mat" -dof 6 -cost mutualinfo -searchcost mutualinfo
-# flirt -ref "${T1_FILE_PREFIX}_bet.nii.gz" -in "${DIF_FILE_PREFIX}_meanb0.nii.gz" -out "${DIF_FILE_PREFIX}_meanb0_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat" -dof 6
 
 # # Apply registration on axon radius maps
 flirt -in $AXON_FILE -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${AXON_FILE_PREFIX}_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
