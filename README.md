@@ -1,9 +1,29 @@
 # AxonDiameter
 
-Processing for spiral data can be started running scripts/process_spiral.sh #IN_FILE.
-Processing for EPI data can be started running scripts/process_epi.sh #IN_FILE #IN_FILE_PA.
-With option "-t" a T1 image can be provided to do white matter segmentation and along-tract evaluation of the axon diameter.
-Option "-e" selects a maximum-likelihood estimation for spherical harmonic fitting insted of denoising the data directly, option "-m" converts spiral data from complex to magnitude before denoising.
+This is a preprocessing pipeline for axon diameter mapping using very high b-values. The preprocessing pipeline can be used for both spiral and EPI data. 
+
+## Instructions
+
+A working docker container containing all software dependencies listed below and example anonomized data can be pulled by running:
+```
+docker pull mavel101/axon_mapping
+```
+The docker container requires both a valid Matlab license (incl. Image Processing toolbox) and the Nvidia container toolkit for GPU usage. The container can be started by running:
+```
+docker run -it --rm --gpus all -v /path/to/matlab/license/file:/licenses/license.lic -e MLM_LICENSE_FILE=/licenses/license.lic mavel101/axon_mapping bash
+```
+The path to the Matlab license file has to be exchanged. Inside the container the spiral/EPI pipeline can be run using:
+```
+cd ~/AxonDiameter
+./run_spiral.sh or ./run_epi.sh
+```
+The example pipeline does not include the gradient unwarping (step 6) as a proprietary file is needed. Instead the already processed data is found in the data folder ("~/AxonDiameter/data") of the container. Also T1 brain extraction is omitted, as the example data is already brain extracted due to anonomization purposes.
+
+- Processing for spiral data can be started running scripts/process_spiral.sh #IN_FILE.  
+- Processing for EPI data can be started running scripts/process_epi.sh #IN_FILE #IN_FILE_PA.  
+- With option "-t" a T1 image can be provided to do white matter segmentation and along-tract evaluation of the axon diameter.  
+- Option "-e" selects a maximum-likelihood estimation for spherical harmonic fitting insted of denoising the data directly
+- Option "-m" converts spiral data from complex to magnitude before denoising.  
 
 Before processing EPI data, the b-vectors should be corrected with the submodule "correctBmatrixOverflow", which corrects for an integer overflow leading to partly wrong b-vectors. Resulting b-vectors have to be transformed to Nifti space with the function "transformForNifti".
 
@@ -48,11 +68,11 @@ Before processing EPI data, the b-vectors should be corrected with the submodule
 - AxonRadiusMapping (included submodule)
 - Python (incl. Numpy, Nibabel 3.2.2 (< version 4))
 - Matlab R2019b
-- Antspy (for along-fibre quantification and brain extraction) v0.3.8
-- Antspynet (for brain extraction) v0.2.3
-For along-fibre quantification:
+- Antspy v0.3.8
+- Antspynet v0.2.3
 - Dipy v1.7.0
 - PyAFQ v1.1
+- nipype v1.8.6
 
 ## References
 
