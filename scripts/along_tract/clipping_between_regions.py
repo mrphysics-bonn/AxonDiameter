@@ -25,20 +25,9 @@ def main(args):
     roi2_path = args.roi2
     temporary_txt = args.temporary_txt
 
-    # input example:
-    # dwi_path = "/Volumes/cerebnet/ESMI_dwi_tracking/data/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL/processing/topup_eddy/dwi_eddy_corrected.nii.gz"
-    # tck_path = "/Volumes/cerebnet/ESMI_dwi_tracking/2022/Tracts/DRTCT_L/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL.tck"
-    # tck_clipped_path = "/Volumes/cerebnet/ESMI_dwi_tracking/2022/Tracts/clipped/DRTCT_L/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL.tck"
-    # roi1_path="/Volumes/cerebnet/ESMI_dwi_tracking/2022/Intermidiate_files/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL/ROIs/DN_right.nii.gz"
-    # roi2_path="/Volumes/cerebnet/ESMI_dwi_tracking/2022/Intermidiate_files/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL/ROIs/ctx-lh-G_precentral.nii.gz"
-    # temporary_txt="/Volumes/Seagate/2022/try1.txt"
-
     dwi_nib = nib.load(dwi_path)
     dwi_data = dwi_nib.get_fdata()
     reference_anatomy = nib.load(dwi_path) 
-
-    # affine, dimensions, voxel_sizes, voxel_order = get_reference_info(reference_anatomy)
-    # nifti_header = create_nifti_header(affine, dimensions, voxel_sizes)
 
     cc_sft = load_tractogram(tck_path, reference_anatomy, bbox_valid_check=False)
 

@@ -9,7 +9,6 @@ Created on Sun Jul 17 17:30:02 2022
 #sudo pip3 install pyAFQ
 
 import argparse
-import os.path as op
 import numpy as np
 import nibabel as nib
 from dipy.io.streamline import load_tractogram
@@ -30,11 +29,6 @@ def main(args):
     distance_threshold = args.distance_threshold
     length_threshold = args.length_threshold
     n_points = args.n_points
-
-    # input example:
-    # dwi_path = "/Volumes/cerebnet/ESMI_dwi_tracking/data/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL/processing/topup_eddy/dwi_eddy_corrected.nii.gz"
-    # tck_path = "/Volumes/cerebnet/ESMI_dwi_tracking/2022/Tracts/DRTCT_L/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL.tck"
-    # tck_cleaned_path = "/Volumes/cerebnet/ESMI_dwi_tracking/2022/Tracts/cleaned/DRTCT_L/ataxSCA3_ESMI_AAC_418-918-735_20170425_BASL.tck"
 
     # cleaning parameters (default)
     # -> n_points=100
