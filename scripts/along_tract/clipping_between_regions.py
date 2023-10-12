@@ -78,8 +78,8 @@ def main(args):
                 if len(location2[0])>1:
                     location2 = location2[0]
         
-                locat1 = np.int(location1[0])# use int instead of np.int to silence teh warning
-                locat2 = np.int(location2[0])
+                locat1 = int(location1[0])
+                locat2 = int(location2[0])
                 
                 if not locat1 == 0:
                     if locat1<locat2:
