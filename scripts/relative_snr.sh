@@ -46,9 +46,17 @@ fslmaths "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0
 fslmaths "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR.nii.gz"
 
 if test -f $T1_FILE && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
+    # Register
     flirt -in "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz" -ref $T1_FILE -out "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
     flirt -in "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -ref $T1_FILE -out "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
     flirt -in "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -ref $T1_FILE -out "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+
+    # Apply mask
+    fslmaths "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz"
+    fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz"
+    fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz"
+
+    # Mask only white matter
     fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg_wm.nii.gz"
     fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg_wm.nii.gz"
 fi
