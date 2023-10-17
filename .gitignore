@@ -2,5 +2,7 @@ connectom_coeff.grad
 data/*
 !data/.gitkeep
 seq/pilot
+seq/dsv_files
 test/
-scripts/along_tract/__pycache__/
+*__pycache__*
+*.h5

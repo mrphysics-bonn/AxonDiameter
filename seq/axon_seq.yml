@@ -1,0 +1,13 @@
+name: axon_seq
+channels:
+    - defaults
+dependencies:
+    - python=3.8
+    - pip
+    - numpy==1.23.5
+    - pip:
+        - sigpy==0.1.26
+        - ismrmrd==1.14.0
+        - dipy==1.7.0
+        - git+https://github.com/mavel101/pypulseq@dev_mv
+        - git+https://github.com/mrphysics-bonn/spiraltraj
