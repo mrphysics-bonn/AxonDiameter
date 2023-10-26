@@ -29,13 +29,10 @@ else
 fi
 
 # Register mean b0 to MPRAGE using the epi_reg script
-mrconvert -force "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.mif"
-dwiextract -force "${IN_FILE_PREFIX}_moco_unwarped_bet.mif" - -bzero | mrmath -force - mean "${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0.mif" -axis 3
-mrconvert -force "${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0.mif" "${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0.nii.gz"
-epi_reg --epi="${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0.nii.gz" --t1=$T1_FILE --t1brain="${T1_FILE_PREFIX}_bet.nii.gz" --wmseg="${T1_FILE_PREFIX}_bet_seg.nii.gz" --out="${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0_reg.nii.gz"
+epi_reg --epi="${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet.nii.gz" --t1=$T1_FILE --t1brain="${T1_FILE_PREFIX}_bet.nii.gz" --wmseg="${T1_FILE_PREFIX}_bet_seg.nii.gz" --out="${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_reg.nii.gz"
 
 # Apply registration on axon radius maps
-flirt -in "${IN_FILE_PATH}/AxonRadiusMap.nii" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -applyxfm -init "${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0_reg.mat"
+flirt -in "${IN_FILE_PATH}/AxonRadiusMap.nii" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -applyxfm -init "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_reg.mat"
 
 # Apply white matter mask on axon radius maps
 fslmaths "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap_wm.nii.gz"
