@@ -74,6 +74,7 @@ mrcat -force "${IN_FILE_PREFIX}_AP_b0.mif" "${IN_FILE_PREFIX}_PA_b0.mif" "${IN_F
 # let mrtrix take care of providing eddy and topup input and output
 # readout_time is copied from the json file for our data
 # mporder is recommended to be somewhere between N/4 and N/2, where N is the number of excitations
+# "dont_sep_offs_move" is used as it leads to reduced shifts between the two shells
 dwifslpreproc -force "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_pair -se_epi "${IN_FILE_PREFIX}_b0.mif" -pe_dir ap -readout_time 0.0227833 -eddy_mask "${IN_FILE_PREFIX}_denoised_mag_meanb0_bet_mask.nii" -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --flm=cubic --repol --dont_sep_offs_move --fwhm=10,0,0,0,0 --data_is_shelled --mporder=13 --ol_type=both "
 
 # Convert mrtrix output to nii and bvec/bval
