@@ -38,6 +38,14 @@ dwiextract -force "${DIF_FILE_PREFIX}.mif" - -bzero | mrmath -force - mean "${DI
 mrconvert -force "${DIF_FILE_PREFIX}_meanb0.mif" "${DIF_FILE_PREFIX}_meanb0.nii.gz"
 fslmaths "${DIF_FILE_PREFIX}_meanb0.nii.gz" -div $NOISE_FILE "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz"
 
+dwiextract -force "${DIF_FILE_PREFIX}.mif" - -shells 6000 | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb6000.mif" -axis 3
+mrconvert -force "${DIF_FILE_PREFIX}_meanb6000.mif" "${DIF_FILE_PREFIX}_meanb6000.nii.gz"
+fslmaths "${DIF_FILE_PREFIX}_meanb6000.nii.gz" -div $NOISE_FILE "${DIF_FILE_PREFIX}_meanb6000_relativeSNR.nii.gz"
+
+dwiextract -force "${DIF_FILE_PREFIX}.mif" - -shells 30450 | mrmath -force - mean "${DIF_FILE_PREFIX}_meanb30000.mif" -axis 3
+mrconvert -force "${DIF_FILE_PREFIX}_meanb30000.mif" "${DIF_FILE_PREFIX}_meanb30000.nii.gz"
+fslmaths "${DIF_FILE_PREFIX}_meanb30000.nii.gz" -div $NOISE_FILE "${DIF_FILE_PREFIX}_meanb30000_relativeSNR.nii.gz"
+
 # Spherical-harmonic decomposition relative SNR map
 fslmaths ${SH_FILE1} -div $NOISE_FILE "${SH_FILE1_PREFIX}_relativeSNR.nii.gz"
 fslmaths ${SH_FILE2} -div $NOISE_FILE "${SH_FILE2_PREFIX}_relativeSNR.nii.gz"
@@ -48,6 +56,8 @@ fslmaths "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -mul "${DIF_FILE_PREFIX}_meanb0
 if test -f $T1_FILE && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
     # Register
     flirt -in "${DIF_FILE_PREFIX}_meanb0_relativeSNR.nii.gz" -ref $T1_FILE -out "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    flirt -in "${DIF_FILE_PREFIX}_meanb6000_relativeSNR.nii.gz" -ref $T1_FILE -out "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
+    flirt -in "${DIF_FILE_PREFIX}_meanb30000_relativeSNR.nii.gz" -ref $T1_FILE -out "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
     flirt -in "${SH_FILE1_PREFIX}_relativeSNR.nii.gz" -ref $T1_FILE -out "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
     flirt -in "${SH_FILE2_PREFIX}_relativeSNR.nii.gz" -ref $T1_FILE -out "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -applyxfm -init "${DIF_FILE_PREFIX}_meanb0_reg.mat"
 
@@ -55,9 +65,13 @@ if test -f $T1_FILE && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
     fslmaths "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz"
     fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz"
     fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz"
 
     # Mask only white matter
     fslmaths "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg_wm.nii.gz"
     fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg_wm.nii.gz"
     fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg_wm.nii.gz"
 fi
