@@ -101,8 +101,8 @@ else
     # Spherical harmonic decomposition
     # Rician bias correction needs up to commit aea92a8 from https://github.com/lukeje/mrtrix3
     # Calculate one dataset without normalization for relative noise estimation
-    amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
-    amp2sh -force -lmax 6 -shells 0,30450 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,6000 -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
+    amp2sh -force -lmax 6 -shells 0,30450 -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b30000.nii.gz"
     # Extract 0th order coefficients
     fslsplit "${IN_FILE_PREFIX}_sh_b6000.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_split"
     fslsplit "${IN_FILE_PREFIX}_sh_b30000.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_split"
@@ -114,11 +114,14 @@ else
     fslmaths "${IN_FILE_PREFIX}_sh_b30000.nii.gz" -div 3.5449077018110318 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 fi
 
-# Register decomposed shells as sometimes eddy causes a shift between the two shells - remove nans and negatives first
-fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
-fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 -uthr 0.5 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+# Register b3000ß shell as sometimes eddy causes a shift between the two shells - remove nans and negatives first
+fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -nan -thr 0 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -nan -thr 0 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 flirt -ref "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
-flirt -ref "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+
+# Normalize to mean b0
+fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -div "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -div "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 
 # Calculate axon diameters
 matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;calcAxonMaps('${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz', '${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PATH}/grad_dev.nii.gz');exit"

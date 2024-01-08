@@ -98,6 +98,8 @@ if $mle_flag; then
     matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;fitSH('${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz', '${IN_FILE_PREFIX}_noise_map.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PREFIX}');exit"
     gzip -k -f "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii"
     gzip -k -f "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii"
+    fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -div "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+    fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -div "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
 else
     if $mag_flag; then
         amp2sh -force -lmax 6 -shells 0,6000 -normalise -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000.nii.gz"
