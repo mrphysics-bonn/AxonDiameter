@@ -78,13 +78,20 @@ slspec="$SCRIPTPATH/slspec_spiral.txt"
 # let mrtrix take care of providing eddy input and output
 # first level model (flm) is set to movement to avoid eddy current correction, as spiral data has already been corrected
 # mporder is recommended to be somewhere between N/4 and N/2, where N is the number of excitations
-dwifslpreproc -force "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -rpe_none -pe_dir ap -eddy_mask "${IN_FILE_PREFIX}_denoised_mag_meanb0_bet_mask.nii" -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --flm=movement --repol --data_is_shelled --mporder=13 --ol_type=both "
+SCRATCH_DIR="$IN_FILE_PATH/dwifslpreproc_tmp"
+dwifslpreproc -force "${IN_FILE_PREFIX}_denoised_mag_gr.mif" "${IN_FILE_PREFIX}_moco.mif" -nocleanup -scratch "$SCRATCH_DIR" -rpe_none -pe_dir ap -eddy_mask "${IN_FILE_PREFIX}_denoised_mag_meanb0_bet_mask.nii" -eddy_slspec $slspec -eddyqc_all "$IN_FILE_PATH/eddy_params" -eddy_options " --dfields --flm=movement --repol --data_is_shelled --mporder=13 --ol_type=both "
+mkdir -p "$IN_FILE_PATH/eddy_params/dfields"
+cp "$SCRATCH_DIR/dwi_post_eddy.eddy_displacement_fields"* "$IN_FILE_PATH/eddy_params/dfields"
+rm -rf $SCRATCH_DIR
 
 # Convert mrtrix output to nii and bvec/bval
 mrconvert -force "${IN_FILE_PREFIX}_moco.mif" -export_grad_fsl "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco.nii.gz"
 
 # Gradient nonlinearity correction
 ${SCRIPTPATH}/GradientDistortionUnwarp.sh --workingdir="$IN_FILE_PATH/unwarp_wd" --in="${IN_FILE_PREFIX}_moco" --out="${IN_FILE_PREFIX}_moco_unwarped" --coeffs="${SCRIPTPATH}/../connectom_coeff.grad" --owarp="${IN_FILE_PREFIX}_owarp"
+
+# Concatenate and apply all warps thus far
+python "${SCRIPTPATH}/concat_warps.py" "$IN_FILE_PATH/eddy_params" "$IN_FILE_PATH/unwarp_wd" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz"
 
 # Calculate and apply new brain mask after eddy and nonlinearity correction
 mrconvert -force "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.mif"
@@ -128,5 +135,5 @@ if test -f ${T1_FILE}; then
 fi
 
 # Do some DTI fitting to check FA
-mkdir ${IN_FILE_PATH}/dtifit
+mkdir -p ${IN_FILE_PATH}/dtifit
 dtifit -k "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" -o ${IN_FILE_PATH}/dtifit/FSL_dtifit -m "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" -r "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" -b "${IN_FILE_PREFIX}_moco_unwarped_bet.bval"

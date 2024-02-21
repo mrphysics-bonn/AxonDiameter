@@ -17,15 +17,16 @@ T1_FILE_PREFIX=${T1_FILE%%.*}
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # Create white matter mask from T1 data
-if test -f "${T1_FILE_PREFIX}_bet.nii.gz" && test -f "${T1_FILE_PREFIX}_bet_seg.nii.gz"; then
+if test -f "${T1_FILE_PREFIX}_bet.nii.gz" && test -f "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz"; then
     echo "White matter mask already exists. Skip calculation."
 else
     # Brain extraction
     python "${SCRIPTPATH}/t1_processing.py" -m $T1_FILE "${T1_FILE_PREFIX}_bet"
 
     # Create white matter mask from T1 data
-    fast -N "${T1_FILE_PREFIX}_bet.nii.gz"
-    fslmaths "${T1_FILE_PREFIX}_bet_pve_2.nii.gz" -thr 0.85 -bin "${T1_FILE_PREFIX}_bet_seg.nii.gz"
+    fast "${T1_FILE_PREFIX}_bet.nii.gz"
+    fslmaths "${T1_FILE_PREFIX}_bet_pve_2.nii.gz" -thr 0.98 -bin "${T1_FILE_PREFIX}_bet_seg.nii.gz"
+    python ${SCRIPTPATH}/erode_mask.py "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz"
 fi
 
 # Register mean b0 to MPRAGE using the epi_reg script
@@ -35,7 +36,7 @@ epi_reg --epi="${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet.nii.gz" --t1=$T1_FILE 
 flirt -in "${IN_FILE_PATH}/AxonRadiusMap.nii" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -applyxfm -init "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_reg.mat"
 
 # Apply white matter mask on axon radius maps
-fslmaths "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap_wm.nii.gz"
+fslmaths "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap_wm.nii.gz"
 
 # Calculate relative SNR maps
 ${SCRIPTPATH}/relative_snr.sh "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" "${IN_FILE_PREFIX}_noise_map.nii.gz" "${T1_FILE_PREFIX}_bet.nii.gz"
