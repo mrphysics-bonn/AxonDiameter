@@ -101,13 +101,12 @@ flirt -ref "${IN_FILE_PATH}/tmp_b6000.nii.gz" -in "${IN_FILE_PATH}/tmp_b30000.ni
 # Concatenate and apply all warps thus far
 python "${SCRIPTPATH}/concat_warps.py" "$IN_FILE_PATH/eddy_params" "$IN_FILE_PATH/unwarp_wd" "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -f "${IN_FILE_PATH}/flirt_extra_alignment.mat" -b "${IN_FILE_PREFIX}_moco_unwarped_bet.bval"
 
-# Calculate new brain mask after eddy and nonlinearity correction
+# Calculate and apply new brain mask after eddy and nonlinearity correction
 mrconvert -force "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped.mif"
 dwiextract -force "${IN_FILE_PREFIX}_moco_unwarped.mif" - -bzero | mrmath -force - mean "${IN_FILE_PREFIX}_moco_unwarped_meanb0.mif" -axis 3
 mrconvert -force "${IN_FILE_PREFIX}_moco_unwarped_meanb0.mif" "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz"
 bet "${IN_FILE_PREFIX}_moco_unwarped_meanb0.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet.nii.gz" -f 0.4 -m
-
-# Apply brain mask
+fslmaths ${IN_FILE_PREFIX}_noise_map.nii.gz -bin -mul "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" -odt int
 fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz"
 
 if $mle_flag; then
