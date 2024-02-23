@@ -29,6 +29,9 @@ else
     python ${SCRIPTPATH}/erode_mask.py "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz"
 fi
 
+# Create CC masks from T1 data
+python ${SCRIPTPATH}/cc_masks.py "${T1_FILE_PREFIX}_bet.nii.gz"
+
 # Register mean b0 to MPRAGE using the epi_reg script
 epi_reg --epi="${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet.nii.gz" --t1=$T1_FILE --t1brain="${T1_FILE_PREFIX}_bet.nii.gz" --wmseg="${T1_FILE_PREFIX}_bet_seg.nii.gz" --out="${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_reg.nii.gz"
 
