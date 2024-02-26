@@ -70,10 +70,10 @@ Before processing EPI data, the b-vectors should be corrected with the submodule
 ## Requirements
 
 - MRtrix3 (needs up to commit 3853c58 from https://github.com/lukeje/mrtrix3, that fixes a bug in the Rician bias correction)
-- FSL v6 (older version might work)
+- FSL v6.0.7.3 (older version might work)
 - gradunwarp (included submodule)
 - AxonRadiusMapping (included submodule)
-- Python (incl. Numpy, Nibabel 3.2.2 (< version 4))
+- Python 3.8 (incl. Numpy, Nibabel 3.2.2 (< version 4))
 - Matlab R2019b
 - Antspy v0.3.8
 - Antspynet v0.2.3
