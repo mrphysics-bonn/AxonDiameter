@@ -53,11 +53,16 @@ def main(args):
     # Concatenate & apply warps
     cmd_list_convert = []
     cmd_list_apply = []
+    cmd_list_avg_jac = []
+    cmd_list_apply_jac = []
     for i,file in enumerate(dwi_files):
         comb_warp_file = comb_warp_dir + f"/comb_warp.{i}"
-        cmd = ["convertwarp", 
+        jac_file = comb_warp_dir + f"/jac.{i}"
+        warped_file = os.path.join(warp_dir, f"warped_vol.{i}")
+        cmd = ["convertwarp",
             "-o", comb_warp_file, 
-            "-r", file, 
+            "-r", file,
+            "-j", jac_file,
             f"--warp1={dfield_files[i]}",
             f"--warp2={nlgc_file}"]
         if flirt_mat is not None and bval[i] > 20000:
@@ -66,16 +71,31 @@ def main(args):
         cmd = ["applywarp", 
             "-i", file, 
             "-r", file, 
-            "-o", os.path.join(warp_dir, f"warped_vol.{i}"), 
+            "-o", warped_file, 
             "-w", comb_warp_file,
             "--interp=spline"]
         cmd_list_apply.append(cmd)
+        cmd = ["fslmaths",
+               jac_file,
+               "-Tmean",
+               jac_file]
+        cmd_list_avg_jac.append(cmd)
+        cmd = ["fslmaths",
+               warped_file,
+               "-mul",
+               jac_file,
+               warped_file]
+        cmd_list_apply_jac.append(cmd)
 
     cores = psutil.cpu_count(logical = False)
     pool = Pool(processes=cores)
     res = [pool.apply_async(run_subprocess, [cmd]) for cmd in cmd_list_convert]
     res2 = [val.get() for val in res]
     res = [pool.apply_async(run_subprocess, [cmd]) for cmd in cmd_list_apply]
+    res2 = [val.get() for val in res]
+    res = [pool.apply_async(run_subprocess, [cmd]) for cmd in cmd_list_avg_jac]
+    res2 = [val.get() for val in res]
+    res = [pool.apply_async(run_subprocess, [cmd]) for cmd in cmd_list_apply_jac]
     res2 = [val.get() for val in res]
     pool.close()
 

@@ -18,7 +18,7 @@ T1_FILE_PATH=$(dirname $T1_FILE)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # Create white matter mask from T1 data
-if test -f "${T1_FILE_PREFIX}_bet.nii.gz" && test -f "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz"; then
+if test -f "${T1_FILE_PREFIX}_bet.nii.gz" && test -f "${T1_FILE_PREFIX}_bet_seg.nii.gz"; then
     echo "White matter mask already exists. Skip calculation."
 else
     # Brain extraction
@@ -26,8 +26,8 @@ else
 
     # Create white matter mask from T1 data
     fast "${T1_FILE_PREFIX}_bet.nii.gz"
-    fslmaths "${T1_FILE_PREFIX}_bet_pve_2.nii.gz" -thr 0.98 -bin "${T1_FILE_PREFIX}_bet_seg.nii.gz"
-    python ${SCRIPTPATH}/erode_mask.py "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz"
+    fslmaths "${T1_FILE_PREFIX}_bet_pve_2.nii.gz" -thr 0.85 -bin "${T1_FILE_PREFIX}_bet_seg.nii.gz"
+    # python ${SCRIPTPATH}/erode_mask.py "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz"
 fi
 
 # Create CC masks from T1 data
@@ -40,7 +40,7 @@ epi_reg --epi="${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet.nii.gz" --t1=$T1_FILE 
 flirt -in "${IN_FILE_PATH}/AxonRadiusMap.nii" -ref "${T1_FILE_PREFIX}_bet.nii.gz" -out "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -applyxfm -init "${IN_FILE_PREFIX}_moco_unwarped_bet_meanb0_reg.mat"
 
 # Apply white matter & CC masks on axon radius maps
-fslmaths "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg_eroded.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap_wm.nii.gz"
+fslmaths "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -mul "${T1_FILE_PREFIX}_bet_seg.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap_wm.nii.gz"
 fslmaths "${IN_FILE_PATH}/AxonRadiusMap_reg.nii.gz" -mul "${T1_FILE_PATH}/cc_mask_bin.nii.gz" "${IN_FILE_PATH}/AxonRadiusMap_cc.nii.gz"
 
 # Calculate relative SNR maps

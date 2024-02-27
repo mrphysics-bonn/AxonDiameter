@@ -69,9 +69,9 @@ if test -f $T1_FILE && test -f "${DIF_FILE_PREFIX}_meanb0_reg.mat"; then
     fslmaths "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_mask.nii.gz" "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz"
 
     # Mask only white matter
-    fslmaths "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg_eroded.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg_wm.nii.gz"
-    fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg_eroded.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg_wm.nii.gz"
-    fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg_eroded.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg_wm.nii.gz"
-    fslmaths "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg_eroded.nii.gz" "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg_wm.nii.gz"
-    fslmaths "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg_eroded.nii.gz" "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${DIF_FILE_PREFIX}_meanb0_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${SH_FILE1_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE1_PREFIX}_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${SH_FILE2_PREFIX}_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${SH_FILE2_PREFIX}_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${DIF_FILE_PREFIX}_meanb6000_relativeSNR_reg_wm.nii.gz"
+    fslmaths "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg.nii.gz" -mul "${T1_FILE_PREFIX}_seg.nii.gz" "${DIF_FILE_PREFIX}_meanb30000_relativeSNR_reg_wm.nii.gz"
 fi
