@@ -99,7 +99,9 @@ fslmaths "${IN_FILE_PREFIX}_moco_unwarped.nii.gz" -mul "${IN_FILE_PREFIX}_moco_u
 # as sometimes eddy seems to cause a shift between the two shells
 if $mle_flag; then
     matlab -nodisplay -r "addpath ${SCRIPTPATH}/../AxonRadiusMapping/;fitSH('${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_meanb0_bet_mask.nii.gz', '${IN_FILE_PREFIX}_noise_map.nii.gz', '${IN_FILE_PREFIX}_moco_unwarped_bet.bval', '${IN_FILE_PREFIX}_moco_unwarped_bet.bvec', '${IN_FILE_PREFIX}');exit"
-    flirt -ref "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii" -in "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii" -omat "${IN_FILE_PATH}/flirt_extra_alignment.mat"
+    fslmaths "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii" -nan -thr 0 "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz"
+    fslmaths "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii" -nan -thr 0 "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz"
+    flirt -ref "${IN_FILE_PREFIX}_sh_b6000_powderavg.nii.gz" -in "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -schedule ${FSLDIR}/etc/flirtsch/ytransonly.sch -out "${IN_FILE_PREFIX}_sh_b30000_powderavg.nii.gz" -omat "${IN_FILE_PATH}/flirt_extra_alignment.mat"
 else
     amp2sh -force -normalise -lmax 6 -shells 0,6000 -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PATH}/tmp_b6000.nii.gz"
     amp2sh -force -normalise -lmax 6 -shells 0,30450 -rician "${IN_FILE_PREFIX}_noise_map.nii.gz" -fslgrad "${IN_FILE_PREFIX}_moco_unwarped_bet.bvec" "${IN_FILE_PREFIX}_moco_unwarped_bet.bval" "${IN_FILE_PREFIX}_moco_unwarped_bet.nii.gz" "${IN_FILE_PATH}/tmp_b30000.nii.gz"
